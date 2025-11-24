@@ -457,6 +457,44 @@ async function addNote(conversationId, noteText) {
 }
 
 /**
+ * Add line item (timeline event) to conversation
+ */
+async function addLineItem(conversationId, actionText) {
+  try {
+    const requestBody = {
+      type: 'lineitem',
+      user: 1,           // System user
+      action_type: 100,  // Custom action type
+      source_type: 3,    // API
+      source_via: 2      // USER
+    };
+
+    // Add custom action text via meta if provided
+    if (actionText) {
+      requestBody.meta = { custom_action_text: actionText };
+    }
+
+    const response = await axios.post(
+      `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
+      requestBody,
+      {
+        headers: {
+          'X-Automail-API-Key': CONFIG.freescoutApiKey,
+          'Content-Type': 'application/json'
+        },
+        httpsAgent: new (await import('https')).Agent({ rejectUnauthorized: false })
+      }
+    );
+
+    console.log(`✅ Line item added to conversation ${conversationId}: ${actionText}`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Failed to add line item:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
  * Health check endpoint
  */
 app.get('/health', (req, res) => {
@@ -776,17 +814,10 @@ app.post('/webhook/signed-and-paid', async (req, res) => {
     // Update conversation with SIGNED_AND_PAID tag
     await updateConversationTags(conversation_id, ['SIGNED_AND_PAID']);
 
-    // Add note with payment details
-    const noteText = `[PAYMENT_CONFIRMED] Customer has signed and paid
+    // Add line item for payment confirmation
+    const paymentText = `Payment confirmed: €${payment_amount || 'N/A'} - ${payment_date || 'N/A'} (Ref: ${reference_number || 'N/A'})`;
 
-💰 Payment Details:
-- Date: ${payment_date || 'N/A'}
-- Amount: €${payment_amount || 'N/A'}
-- Reference: ${reference_number || 'N/A'}
-
-✅ Workflow 15 will automatically send confirmation email (Email 5)`;
-
-    await addNote(conversation_id, noteText);
+    await addLineItem(conversation_id, paymentText);
 
     console.log(`✅ SIGNED_AND_PAID tag added to conversation ${conversation_id}`);
     console.log(`   → Workflow 15 will trigger Email 5 automatically\n`);
@@ -970,13 +1001,10 @@ PDF, JPG, PNG, of DOC/DOCX</p>
     // Add DOCS_REQUESTED tag
     await updateConversationTags(conversationId, ['DOCS_REQUESTED']);
 
-    // Add note about AI generation and scheduled email
-    await addNote(
+    // Add line item for workflow tracking
+    await addLineItem(
       conversationId,
-      `[BOX3_FLOW] Email 1 verzonden: Welkom & Proces (AI-generated, personalized)
-[BOX3_FLOW] Email 2 gescheduleerd: Upload aangifte (scheduled for ${scheduledTime.toLocaleString()})
-
-Generated ${welcomeEmailBody.length} characters based on customer's initial message.`
+      `Email 1: Welcome email sent (AI-generated, ${welcomeEmailBody.length} chars) | Email 2: Upload request scheduled for ${scheduledTime.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })}`
     );
 
     console.log(`✅ Welcome email sent for conversation ${conversationId}`);
@@ -1046,10 +1074,10 @@ async function handleIntentDetect(conversation, res) {
     // Update conversation with intent tag
     await updateConversationTags(conversationId, [detectedIntent]);
 
-    // Add note to conversation
-    await addNote(
+    // Add line item for intent detection
+    await addLineItem(
       conversationId,
-      `[INTENT_DETECTED] ${detectedIntent}\n\nDetected by OpenAI based on latest customer message.`
+      `Intent detected: ${detectedIntent}`
     );
 
     console.log(`✅ Intent detection complete: ${detectedIntent}\n`);
