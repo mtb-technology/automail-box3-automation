@@ -39,6 +39,107 @@ const CONFIG = {
 };
 
 /**
+ * Custom Field Mapping for Mailbox 3 (Box 3 service)
+ * Maps FreeScout custom field IDs to their names for easy access
+ */
+const CUSTOM_FIELD_MAP = {
+  FORM_ID: 9,
+  ACTIVE_STEP: 10,
+  WOZ_VALUE: 11,
+  MORTGAGE_VALUE: 12,
+  SAVINGS_VALUE: 13,
+  INVESTMENT_VALUE: 14,
+  ASSETS_VALUE: 15,
+  DEBTS_VALUE: 16,
+  ESTIMATE_1: 17,
+  ESTIMATE_2: 18,
+  FINAL_ESTIMATE: 19,
+  // Future field - add this to FreeScout if you want service-specific prompts
+  SERVICE_NAME: null // TODO: Create this custom field in FreeScout (e.g., "Box 3 Bezwaar", "Tax Analysis", "Business Tax")
+};
+
+/**
+ * Service-specific context for AI prompts
+ * Maps service names to additional context that should be included in prompts
+ */
+const SERVICE_CONTEXT_MAP = {
+  'Box 3 Bezwaar': {
+    focus: 'Box 3 vermogensbelasting bezwaar',
+    keywords: ['Box 3', 'vermogensrendementsheffing', 'bezwaar', 'aangifte'],
+    additionalContext: 'Focus on Box 3 wealth tax objection process and timeline'
+  },
+  'Tax Analysis': {
+    focus: 'General tax analysis and advice',
+    keywords: ['belasting', 'analyse', 'advies'],
+    additionalContext: 'Provide general tax advice and analysis'
+  },
+  'Business Tax': {
+    focus: 'Business tax matters (BTW, VPB, etc.)',
+    keywords: ['onderneming', 'BTW', 'vennootschapsbelasting'],
+    additionalContext: 'Focus on business tax matters including VAT and corporate income tax'
+  },
+  'Default': {
+    focus: 'General tax advisory service',
+    keywords: ['belasting', 'advies'],
+    additionalContext: 'Provide helpful tax advisory services'
+  }
+};
+
+/**
+ * Helper function to get custom field value from conversation
+ */
+function getCustomFieldValue(conversation, fieldId) {
+  if (!conversation.customFields || !fieldId) return null;
+
+  const field = conversation.customFields.find(f => f.id === fieldId);
+  return field ? field.value : null;
+}
+
+/**
+ * Helper function to get service context for AI prompts
+ */
+function getServiceContext(conversation) {
+  const serviceName = getCustomFieldValue(conversation, CUSTOM_FIELD_MAP.SERVICE_NAME);
+
+  // If SERVICE_NAME field exists and has a value, use it
+  if (serviceName && SERVICE_CONTEXT_MAP[serviceName]) {
+    return SERVICE_CONTEXT_MAP[serviceName];
+  }
+
+  // Otherwise, default to Box 3 Bezwaar (since mailbox 3 is for Box 3)
+  return SERVICE_CONTEXT_MAP['Box 3 Bezwaar'];
+}
+
+/**
+ * Helper function to format custom fields for AI prompts
+ * Returns a formatted string with all non-empty custom field values
+ * Excludes internal tracking fields (Form ID, Active Step)
+ */
+function formatCustomFieldsForPrompt(conversation) {
+  if (!conversation.customFields || conversation.customFields.length === 0) {
+    return '';
+  }
+
+  // Fields to exclude from AI prompts (internal tracking only)
+  const excludedFieldIds = [
+    CUSTOM_FIELD_MAP.FORM_ID,      // Form ID - internal tracking
+    CUSTOM_FIELD_MAP.ACTIVE_STEP   // Active Step - internal workflow state
+  ];
+
+  const nonEmptyFields = conversation.customFields
+    .filter(field => field.value && field.value.trim() !== '')
+    .filter(field => !excludedFieldIds.includes(field.id))
+    .map(field => `- ${field.name}: ${field.value}`)
+    .join('\n');
+
+  if (nonEmptyFields.length === 0) {
+    return '';
+  }
+
+  return `\n\n=== CUSTOMER DATA (Custom Fields) ===\n${nonEmptyFields}\n=== END OF CUSTOMER DATA ===`;
+}
+
+/**
  * Agent definitions and their specialized AI prompts
  * Only includes agents actively used in the Box3 workflows
  */
@@ -278,10 +379,15 @@ async function getConversation(conversationId) {
  */
 async function updateConversationTags(conversationId, newTags) {
   try {
-    // First, fetch existing tags
+    // First, fetch existing tags using the tags endpoint
     const getResponse = await axios.get(
-      `${CONFIG.freescoutUrl}/api/conversations/${conversationId}`,
+      `${CONFIG.freescoutUrl}/api/tags`,
       {
+        params: {
+          conversationId: conversationId,
+          page: 1,
+          pageSize: 100
+        },
         headers: {
           'X-Automail-API-Key': CONFIG.freescoutApiKey
         },
@@ -289,7 +395,9 @@ async function updateConversationTags(conversationId, newTags) {
       }
     );
 
-    const existingTags = getResponse.data.tags || [];
+    // Extract tag names from _embedded.tags array of objects
+    const tagObjects = getResponse.data._embedded?.tags || [];
+    const existingTags = tagObjects.map(tag => tag.name);
 
     // Merge existing tags with new tags (remove duplicates)
     const allTags = [...new Set([...existingTags, ...newTags])];
@@ -367,14 +475,32 @@ app.get('/health', (req, res) => {
 /**
  * Generate AI draft reply for agent using agent-specific prompt
  */
-async function generateDraftReply(conversationHistory, subject, assignedUserId) {
+async function generateDraftReply(conversationHistory, subject, assignedUserId, language = 'nl', serviceContext = null, conversation = null) {
   try {
     // Get agent-specific prompt or use default
     const agentConfig = AGENTS[assignedUserId];
     const agentPrompt = agentConfig ? agentConfig.prompt : DEFAULT_AGENT_PROMPT;
     const agentName = agentConfig ? agentConfig.name : 'General Agent';
 
-    console.log(`📝 Using ${agentName} prompt (User ID: ${assignedUserId})`);
+    console.log(`📝 Using ${agentName} prompt (User ID: ${assignedUserId}), Language: ${language}`);
+    if (serviceContext) {
+      console.log(`   Service focus: ${serviceContext.focus}`);
+    }
+
+    // Add custom fields to prompt if available
+    let customFieldsContext = '';
+    if (conversation) {
+      customFieldsContext = formatCustomFieldsForPrompt(conversation);
+    }
+
+    // Map FreeScout language codes to full names
+    const languageMap = {
+      'nl': 'Dutch',
+      'en': 'English',
+      'de': 'German',
+      'fr': 'French'
+    };
+    const languageName = languageMap[language] || 'Dutch';
 
     // For Intake Agent (ID 22), query Onyx AI for document context
     let additionalContext = '';
@@ -394,6 +520,12 @@ async function generateDraftReply(conversationHistory, subject, assignedUserId) 
       }
     }
 
+    // Add service-specific context if available
+    let servicePromptAddition = '';
+    if (serviceContext && serviceContext.focus !== 'Box 3 vermogensbelasting bezwaar') {
+      servicePromptAddition = `\n\n=== SERVICE CONTEXT ===\nThis conversation is about: ${serviceContext.focus}\n${serviceContext.additionalContext}\n=== END OF SERVICE CONTEXT ===`;
+    }
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -405,7 +537,13 @@ async function generateDraftReply(conversationHistory, subject, assignedUserId) 
           },
           {
             role: 'user',
-            content: `Subject: ${subject}\n\nConversation history:\n${conversationHistory}${additionalContext}\n\nGenerate a draft reply for the agent to review and send.`
+            content: `Language: ${languageName}
+Subject: ${subject}
+
+Conversation history:
+${conversationHistory}${additionalContext}${servicePromptAddition}${customFieldsContext}
+
+Generate a draft reply in ${languageName} for the agent to review and send. Use any relevant custom field data provided above to personalize the response.`
           }
         ],
         temperature: 0.7,
@@ -467,9 +605,33 @@ async function createDraftReply(conversationId, draftText, assignedUserId) {
 /**
  * Generate AI welcome email based on customer's initial message
  */
-async function generateWelcomeEmail(customerMessage, subject, customerName) {
+async function generateWelcomeEmail(customerMessage, subject, customerName, language = 'nl', serviceContext = null, conversation = null) {
   try {
-    console.log(`📝 Generating personalized welcome email for ${customerName}...`);
+    console.log(`📝 Generating personalized welcome email for ${customerName} in language: ${language}...`);
+    if (serviceContext) {
+      console.log(`   Service focus: ${serviceContext.focus}`);
+    }
+
+    // Map FreeScout language codes to full names
+    const languageMap = {
+      'nl': 'Dutch',
+      'en': 'English',
+      'de': 'German',
+      'fr': 'French'
+    };
+    const languageName = languageMap[language] || 'Dutch';
+
+    // Build service-specific context for the prompt
+    let servicePromptAddition = '';
+    if (serviceContext && serviceContext.focus !== 'Box 3 vermogensbelasting bezwaar') {
+      servicePromptAddition = `\n\n**Service Context:**\nThis customer is inquiring about: ${serviceContext.focus}\n${serviceContext.additionalContext}`;
+    }
+
+    // Add custom fields to prompt if available
+    let customFieldsContext = '';
+    if (conversation) {
+      customFieldsContext = formatCustomFieldsForPrompt(conversation);
+    }
 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -483,7 +645,7 @@ async function generateWelcomeEmail(customerMessage, subject, customerName) {
 Your role: Create a warm, personalized welcome email that acknowledges the customer's specific situation and explains the process.
 
 **Email Structure:**
-1. **Personal greeting** - Address them by name, acknowledge their specific situation from their message
+1. **Personal greeting** - Address them by name. If they sent a message, acknowledge their specific situation. If no message yet (lead import), welcome them warmly and acknowledge their interest based on available data (subject, custom fields).
 2. **Process overview** - Explain the 5-step Box 3 bezwaar process:
    - Stap 1: U stuurt uw meest recente aangifte inkomstenbelasting
    - Stap 2: Wij analyseren uw situatie en stellen eventueel aanvullende vragen
@@ -500,12 +662,13 @@ Your role: Create a warm, personalized welcome email that acknowledges the custo
 - Professional but friendly
 - Reassuring and confident
 - Show you understand their concern about Box 3
-- Personalize based on their initial message (reference what they mentioned)
+- Personalize based on available information (their message, custom fields, or subject)
+- If customer data (WOZ, estimates, etc.) is provided, you can reference it naturally
 
 **Important:**
-- Write in Dutch (unless customer wrote in English)
 - Keep it concise (3-4 paragraphs max)
 - Make them feel they made the right choice
+- If no customer message exists yet, focus on welcoming them and explaining the process clearly
 
 IMPORTANT - NO SIGNATURES:
 - DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
@@ -517,12 +680,13 @@ Respond with ONLY the email body (no subject line).`
           {
             role: 'user',
             content: `Customer name: ${customerName}
+Language: ${languageName}
 Subject: ${subject}
 
 Customer's initial message:
-${customerMessage}
+${customerMessage}${servicePromptAddition}${customFieldsContext}
 
-Generate a personalized welcome email that acknowledges their specific situation.`
+Generate a personalized welcome email in ${languageName} that acknowledges their specific situation and uses any relevant custom field data provided above.`
           }
         ],
         temperature: 0.7,
@@ -713,6 +877,10 @@ async function handleWelcomeGenerate(conversation, res) {
 
     const subject = conversation.subject || '';
     const customerName = conversation.customer?.first_name || 'klant';
+    const language = conversation.locale || 'nl'; // Get conversation language
+
+    // Get service context from custom fields
+    const serviceContext = getServiceContext(conversation);
 
     // Extract customer's initial message
     const threads = conversation._embedded?.threads || [];
@@ -720,20 +888,18 @@ async function handleWelcomeGenerate(conversation, res) {
       .filter(t => t.type === 'customer' || t.type === 'message')
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0];
 
-    if (!firstCustomerMessage) {
-      console.log('⚠️  No customer message found');
-      return res.status(400).json({
-        status: 'error',
-        message: 'No customer message found in conversation'
-      });
+    // If no customer message yet (lead import, form submission), use subject/custom fields
+    let customerMessage = '';
+    if (firstCustomerMessage) {
+      customerMessage = firstCustomerMessage.body;
+      console.log(`📝 Generating personalized welcome for ${customerName} based on their message...`);
+    } else {
+      console.log(`⚠️  No customer message found - generating welcome based on subject and custom fields`);
+      customerMessage = `New lead imported. Subject: ${subject}. Customer has not sent a message yet.`;
     }
 
-    const customerMessage = firstCustomerMessage.body;
-
-    console.log(`📝 Generating personalized welcome for ${customerName}...`);
-
     // Generate personalized welcome email using AI
-    const welcomeEmailBody = await generateWelcomeEmail(customerMessage, subject, customerName);
+    const welcomeEmailBody = await generateWelcomeEmail(customerMessage, subject, customerName, language, serviceContext, conversation);
 
     // Send the welcome email
     await sendEmailToCustomer(
@@ -856,6 +1022,10 @@ async function handleDraftGenerate(conversation, res) {
     console.log(`📧 Generating draft for conversation ID: ${conversationId}`);
 
     const userId = conversation.user_id;
+    const language = conversation.locale || 'nl'; // Get conversation language
+
+    // Get service context from custom fields
+    const serviceContext = getServiceContext(conversation);
 
     // Build conversation history
     const threads = conversation._embedded?.threads || [];
@@ -873,7 +1043,7 @@ async function handleDraftGenerate(conversation, res) {
     console.log(`📝 Analyzing conversation (${conversationHistory.length} chars)...`);
 
     // Generate draft using OpenAI with agent-specific prompt
-    const draftReply = await generateDraftReply(conversationHistory, subject, userId);
+    const draftReply = await generateDraftReply(conversationHistory, subject, userId, language, serviceContext, conversation);
 
     // Create draft thread in FreeScout
     await createDraftReply(conversationId, draftReply, userId);

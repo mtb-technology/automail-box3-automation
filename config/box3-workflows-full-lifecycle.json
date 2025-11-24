@@ -70,7 +70,10 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nOm uw Box 3 bezwaar correct te kunnen beoordelen, hebben wij uw meest recente aangifte inkomstenbelasting nodig.\n\n**Wat wij nodig hebben:**\n- Uw aangifte inkomstenbelasting (laatste jaar)\n- Eventuele bijlagen of toelichting\n\n**Hoe te uploaden:**\nBeantwoord deze e-mail en voeg de documenten als bijlage toe.\n\n**Bestandsformaten:**\nPDF, JPG, PNG, of DOC/DOCX\n\nWij verwerken uw aangifte binnen 1-2 werkdagen.\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nOm uw Box 3 bezwaar correct te kunnen beoordelen, hebben wij uw meest recente aangifte inkomstenbelasting nodig.\n\n**Wat wij nodig hebben:**\n- Uw aangifte inkomstenbelasting (laatste jaar)\n- Eventuele bijlagen of toelichting\n\n**Hoe te uploaden:**\nBeantwoord deze e-mail en voeg de documenten als bijlage toe.\n\n**Bestandsformaten:**\nPDF, JPG, PNG, of DOC/DOCX\n\nWij verwerken uw aangifte binnen 1-2 werkdagen.\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
@@ -79,7 +82,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Status: DOCS_REQUESTED\\n[BOX3_FLOW] Email 2 verzonden: Upload aangifte\"}"
+            "value": {
+              "body": "[BOX3_STATE] Status: DOCS_REQUESTED\n[BOX3_FLOW] Email 2 verzonden: Upload aangifte"
+            }
           }
         ]
       ]
@@ -126,7 +131,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] DOCS_REQUESTED → DOCS_RECEIVED\\n[BOX3_FLOW] ✓ Aangifte ontvangen (attachment detected)\"}"
+            "value": {
+              "body": "[BOX3_STATE] DOCS_REQUESTED → DOCS_RECEIVED\n[BOX3_FLOW] ✓ Aangifte ontvangen (attachment detected)"
+            }
           }
         ]
       ]
@@ -180,7 +187,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_INTENT] Intent detection webhook called for customer reply\"}"
+            "value": {
+              "body": "[BOX3_INTENT] Intent detection webhook called for customer reply"
+            }
           }
         ]
       ]
@@ -209,7 +218,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Status: DOCS_RECEIVED → DOCS_UNDER_REVIEW\\n[BOX3_FLOW] Aangifte ontvangen - Intake agent start analyse\"}"
+            "value": {
+              "body": "[BOX3_STATE] Status: DOCS_RECEIVED → DOCS_UNDER_REVIEW\n[BOX3_FLOW] Aangifte ontvangen - Intake agent start analyse"
+            }
           },
           {
             "type": "assign",
@@ -261,12 +272,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nWij hebben nog geen aangifte van u ontvangen.\n\n**Waarom hebben we dit nodig?**\nUw aangifte is cruciaal om te bepalen hoeveel u kunt terugkrijgen van Box 3.\n\n**Nog vragen over het uploaden?**\nNeem gerust contact met ons op.\n\nBeantwoord deze e-mail met uw aangifte als bijlage.\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nWij hebben nog geen aangifte van u ontvangen.\n\n**Waarom hebben we dit nodig?**\nUw aangifte is cruciaal om te bepalen hoeveel u kunt terugkrijgen van Box 3.\n\n**Nog vragen over het uploaden?**\nNeem gerust contact met ons op.\n\nBeantwoord deze e-mail met uw aangifte als bijlage.\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_FLOW] Reminder 1 verzonden: Documenten nog niet ontvangen (2 dagen)\"}"
+            "value": {
+              "body": "[BOX3_FLOW] Reminder 1 verzonden: Documenten nog niet ontvangen (2 dagen)"
+            }
           }
         ]
       ]
@@ -309,12 +325,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nWij hebben na 7 dagen nog steeds geen aangifte ontvangen.\n\n**Heeft u problemen met uploaden?**\nNeem contact op - wij helpen graag!\n\n**Wilt u niet meer verder?**\nLaat het ons weten, dan sluiten wij uw aanvraag af.\n\n**Wilt u toch doorgaan?**\nStuur uw aangifte als bijlage in een antwoord op deze e-mail.\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nWij hebben na 7 dagen nog steeds geen aangifte ontvangen.\n\n**Heeft u problemen met uploaden?**\nNeem contact op - wij helpen graag!\n\n**Wilt u niet meer verder?**\nLaat het ons weten, dan sluiten wij uw aanvraag af.\n\n**Wilt u toch doorgaan?**\nStuur uw aangifte als bijlage in een antwoord op deze e-mail.\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_FLOW] Reminder 2 verzonden: Documenten nog niet ontvangen (7 dagen) - Laatste kans\"}"
+            "value": {
+              "body": "[BOX3_FLOW] Reminder 2 verzonden: Documenten nog niet ontvangen (7 dagen) - Laatste kans"
+            }
           }
         ]
       ]
@@ -331,7 +352,10 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nWij hebben uw aangifte beoordeeld en hebben enkele aanvullende vragen om een zo accuraat mogelijk voorstel te maken.\n\n**WONING (indien van toepassing):**\n- Wanneer gekocht/verkocht?\n- Is de WOZ-waarde correct?\n- Eigen woning of beleggingspand?\n\n**BELEGGINGEN (indien van toepassing):**\n- Bij welke banken/brokers?\n- Zijn er leningen voor deze beleggingen?\n\n**SPAARGELD (indien van toepassing):**\n- Buitenlandse rekeningen?\n- Grote schommelingen rond peildatum?\n\n**SCHULDEN/OVERIG (indien van toepassing):**\n- Soort schuld?\n- Onderbouwing/contract aanwezig?\n\n**Antwoord direct op deze e-mail of vul dit formulier in:**\n[LINK NAAR VRAGENFORMULIER - Wordt toegevoegd door agent]\n\nMet vriendelijke groet,\n\nBox 3 Team - Intake"
+              "body": "Beste {{customer.name}},\n\nWij hebben uw aangifte beoordeeld en hebben enkele aanvullende vragen om een zo accuraat mogelijk voorstel te maken.\n\n**WONING (indien van toepassing):**\n- Wanneer gekocht/verkocht?\n- Is de WOZ-waarde correct?\n- Eigen woning of beleggingspand?\n\n**BELEGGINGEN (indien van toepassing):**\n- Bij welke banken/brokers?\n- Zijn er leningen voor deze beleggingen?\n\n**SPAARGELD (indien van toepassing):**\n- Buitenlandse rekeningen?\n- Grote schommelingen rond peildatum?\n\n**SCHULDEN/OVERIG (indien van toepassing):**\n- Soort schuld?\n- Onderbouwing/contract aanwezig?\n\n**Antwoord direct op deze e-mail of vul dit formulier in:**\n[LINK NAAR VRAGENFORMULIER - Wordt toegevoegd door agent]\n\nMet vriendelijke groet,\n\nBox 3 Team - Intake",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
@@ -340,7 +364,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Manual: QUESTIONS_SENT\\n[BOX3_FLOW] Email 3 verzonden: Aanvullende vragen (Manual workflow)\"}"
+            "value": {
+              "body": "[BOX3_STATE] Manual: QUESTIONS_SENT\n[BOX3_FLOW] Email 3 verzonden: Aanvullende vragen (Manual workflow)"
+            }
           }
         ]
       ]
@@ -365,7 +391,9 @@
         [
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Status: QUESTIONS_ANSWERED\\n[BOX3_FLOW] Vragen beantwoord - Fiscalist moet definitief voorstel maken\"}"
+            "value": {
+              "body": "[BOX3_STATE] Status: QUESTIONS_ANSWERED\n[BOX3_FLOW] Vragen beantwoord - Fiscalist moet definitief voorstel maken"
+            }
           },
           {
             "type": "assign",
@@ -391,7 +419,10 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\n**Goed nieuws!** Op basis van uw gegevens hebben wij een voorstel voor u gemaakt.\n\n**Verwacht voordeel:**\nWij verwachten dat uw voordeel tussen €[MIN] en €[MAX] ligt.\n\n**Onze vergoeding:**\nOnze vergoeding bedraagt €[FEE] / [Y]% van het behaalde voordeel.\n\n**Netto voordeel (indicatie):**\nTussen €[NET_MIN] en €[NET_MAX]\n\n**Wat wij voor u doen:**\n✓ Indienen bezwaar bij Belastingdienst\n✓ Correspondentie met Belastingdienst\n✓ Bewaking deadlines\n✓ Optimalisatie van uw positie\n\n**Volgende stap:**\nKlik op de knop hieronder om akkoord te gaan, te ondertekenen en te betalen.\n\n[ONDERTEKEN & BETAAL] ← Link wordt toegevoegd door Quote Agent\n\n**Vragen?**\nNeem gerust contact met ons op.\n\nMet vriendelijke groet,\n\nBox 3 Team\n\n---\nSlagingskans: [HOOG/MIDDEL/LAAG]"
+              "body": "Beste {{customer.name}},\n\n**Goed nieuws!** Op basis van uw gegevens hebben wij een voorstel voor u gemaakt.\n\n**Verwacht voordeel:**\nWij verwachten dat uw voordeel tussen €[MIN] en €[MAX] ligt.\n\n**Onze vergoeding:**\nOnze vergoeding bedraagt €[FEE] / [Y]% van het behaalde voordeel.\n\n**Netto voordeel (indicatie):**\nTussen €[NET_MIN] en €[NET_MAX]\n\n**Wat wij voor u doen:**\n✓ Indienen bezwaar bij Belastingdienst\n✓ Correspondentie met Belastingdienst\n✓ Bewaking deadlines\n✓ Optimalisatie van uw positie\n\n**Volgende stap:**\nKlik op de knop hieronder om akkoord te gaan, te ondertekenen en te betalen.\n\n[ONDERTEKEN & BETAAL] ← Link wordt toegevoegd door Quote Agent\n\n**Vragen?**\nNeem gerust contact met ons op.\n\nMet vriendelijke groet,\n\nBox 3 Team\n\n---\nSlagingskans: [HOOG/MIDDEL/LAAG]",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
@@ -400,7 +431,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Manual: OFFER_SENT\\n[BOX3_FLOW] Email 4 verzonden: Definitief voorstel & betaallink (Manual workflow)\"}"
+            "value": {
+              "body": "[BOX3_STATE] Manual: OFFER_SENT\n[BOX3_FLOW] Email 4 verzonden: Definitief voorstel & betaallink (Manual workflow)"
+            }
           },
           {
             "type": "assign",
@@ -448,12 +481,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nWij hebben u 3 dagen geleden een voorstel gestuurd maar hebben nog geen reactie ontvangen.\n\n**Heeft u vragen over het voorstel?**\nBel of mail ons - we helpen graag met een toelichting.\n\n**Veelgestelde vragen:**\n- Wat gebeurt er na ondertekening?\n- Hoe werkt de betaling?\n- Wat als de Belastingdienst afwijst?\n\n[LINK NAAR FAQ]\n\n**Direct akkoord?**\n[ONDERTEKEN & BETAAL]\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nWij hebben u 3 dagen geleden een voorstel gestuurd maar hebben nog geen reactie ontvangen.\n\n**Heeft u vragen over het voorstel?**\nBel of mail ons - we helpen graag met een toelichting.\n\n**Veelgestelde vragen:**\n- Wat gebeurt er na ondertekening?\n- Hoe werkt de betaling?\n- Wat als de Belastingdienst afwijst?\n\n[LINK NAAR FAQ]\n\n**Direct akkoord?**\n[ONDERTEKEN & BETAAL]\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_FLOW] Reminder 1 verzonden: Voorstel niet geaccepteerd (3 dagen)\"}"
+            "value": {
+              "body": "[BOX3_FLOW] Reminder 1 verzonden: Voorstel niet geaccepteerd (3 dagen)"
+            }
           }
         ]
       ]
@@ -496,12 +534,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nWij hebben na 10 dagen nog geen reactie ontvangen op ons voorstel.\n\n**Heeft u hulp nodig?**\nOnze adviseurs staan klaar om uw vragen te beantwoorden.\nBel ons: [TELEFOONNUMMER]\n\n**Wilt u doorgaan?**\n[ONDERTEKEN & BETAAL]\n\n**Wilt u niet meer verder?**\nAntwoord met \"Ik wil niet verder\" en wij sluiten uw dossier af.\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nWij hebben na 10 dagen nog geen reactie ontvangen op ons voorstel.\n\n**Heeft u hulp nodig?**\nOnze adviseurs staan klaar om uw vragen te beantwoorden.\nBel ons: [TELEFOONNUMMER]\n\n**Wilt u doorgaan?**\n[ONDERTEKEN & BETAAL]\n\n**Wilt u niet meer verder?**\nAntwoord met \"Ik wil niet verder\" en wij sluiten uw dossier af.\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_FLOW] Reminder 2 verzonden: Voorstel niet geaccepteerd (10 dagen) - Laatste kans\"}"
+            "value": {
+              "body": "[BOX3_FLOW] Reminder 2 verzonden: Voorstel niet geaccepteerd (10 dagen) - Laatste kans"
+            }
           }
         ]
       ]
@@ -527,12 +570,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nBedankt dat u de tijd heeft genomen om onze dienstverlening te overwegen.\n\nWij begrijpen dat u heeft besloten om niet verder te gaan. Mocht u in de toekomst toch behoefte hebben aan ondersteuning bij uw Box 3 bezwaar of andere fiscale zaken, dan staan wij altijd voor u klaar.\n\n**Nog vragen?**\nOok als u niet doorgaat, helpen we u graag met algemene vragen over Box 3.\n\nWij wensen u veel succes!\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nBedankt dat u de tijd heeft genomen om onze dienstverlening te overwegen.\n\nWij begrijpen dat u heeft besloten om niet verder te gaan. Mocht u in de toekomst toch behoefte hebben aan ondersteuning bij uw Box 3 bezwaar of andere fiscale zaken, dan staan wij altijd voor u klaar.\n\n**Nog vragen?**\nOok als u niet doorgaat, helpen we u graag met algemene vragen over Box 3.\n\nWij wensen u veel succes!\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Status: CLOSED_LOST\\n[BOX3_FLOW] Klant heeft aangegeven niet verder te willen - Afsluitmail verzonden\"}"
+            "value": {
+              "body": "[BOX3_STATE] Status: CLOSED_LOST\n[BOX3_FLOW] Klant heeft aangegeven niet verder te willen - Afsluitmail verzonden"
+            }
           },
           {
             "type": "status",
@@ -563,7 +611,10 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nBedankt voor uw akkoord op ons voorstel!\n\n**Volgende stappen:**\n\n1. **Onderteken de opdracht**\n   [ONDERTEKENEN - Link wordt toegevoegd]\n\n2. **Betaling voldoen**\n   [BETAALLINK - Link wordt toegevoegd]\n\n**Bedrag:** € [BEDRAG]\n\n**Na betaling:**\n- Wij starten direct met uw Box 3 bezwaar\n- U ontvangt bevestiging van ontvangst\n- Verwachte doorlooptijd: 2-4 weken\n\nMet vriendelijke groet,\n\nBox 3 Team"
+              "body": "Beste {{customer.name}},\n\nBedankt voor uw akkoord op ons voorstel!\n\n**Volgende stappen:**\n\n1. **Onderteken de opdracht**\n   [ONDERTEKENEN - Link wordt toegevoegd]\n\n2. **Betaling voldoen**\n   [BETAALLINK - Link wordt toegevoegd]\n\n**Bedrag:** € [BEDRAG]\n\n**Na betaling:**\n- Wij starten direct met uw Box 3 bezwaar\n- U ontvangt bevestiging van ontvangst\n- Verwachte doorlooptijd: 2-4 weken\n\nMet vriendelijke groet,\n\nBox 3 Team",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
@@ -572,7 +623,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] Proposal_Accepted → PAYMENT_STARTED\\n[BOX3_FLOW] Email verzonden met onderteken & betaallink\"}"
+            "value": {
+              "body": "[BOX3_STATE] Proposal_Accepted → PAYMENT_STARTED\n[BOX3_FLOW] Email verzonden met onderteken & betaallink"
+            }
           },
           {
             "type": "assign",
@@ -603,12 +656,17 @@
           {
             "type": "reply",
             "value": {
-              "body": "Beste {{customer.name}},\n\nHartelijk dank! Wij hebben uw ondertekende opdracht en betaling in goede orde ontvangen.\n\n**Overzicht:**\n\n📅 **Datum betaling:** {{payment_date}}\n💶 **Betaald bedrag:** € {{payment_amount}}\n🔖 **Referentienummer:** {{reference_number}}\n\n**Wat gebeurt er nu?**\n\nOnze fiscalisten gaan direct aan de slag met uw dossier. U hoeft voorlopig niets te doen.\n\n**U ontvangt bericht zodra:**\n- Wij uw bezwaarschrift hebben ingediend\n- De Belastingdienst heeft gereageerd\n- Er aanvullende informatie nodig is\n\n**Vragen?**\nNeem gerust contact met ons op. Wij houden u op de hoogte van alle ontwikkelingen.\n\nMet vriendelijke groet,\n\nBox 3 Team\n\n---\n*Verwachte doorlooptijd: 2-4 weken voor eerste actie bij Belastingdienst*"
+              "body": "Beste {{customer.name}},\n\nHartelijk dank! Wij hebben uw ondertekende opdracht en betaling in goede orde ontvangen.\n\n**Overzicht:**\n\n📅 **Datum betaling:** {{payment_date}}\n💶 **Betaald bedrag:** € {{payment_amount}}\n🔖 **Referentienummer:** {{reference_number}}\n\n**Wat gebeurt er nu?**\n\nOnze fiscalisten gaan direct aan de slag met uw dossier. U hoeft voorlopig niets te doen.\n\n**U ontvangt bericht zodra:**\n- Wij uw bezwaarschrift hebben ingediend\n- De Belastingdienst heeft gereageerd\n- Er aanvullende informatie nodig is\n\n**Vragen?**\nNeem gerust contact met ons op. Wij houden u op de hoogte van alle ontwikkelingen.\n\nMet vriendelijke groet,\n\nBox 3 Team\n\n---\n*Verwachte doorlooptijd: 2-4 weken voor eerste actie bij Belastingdienst*",
+              "cc": "",
+              "bcc": "",
+              "conv_history": "none"
             }
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[BOX3_STATE] SIGNED_AND_PAID\\n[BOX3_FLOW] Email 5 verzonden: Bevestiging betaling & opdracht\\n[BOX3_FLOW] Klant is volledig onboarded - Fiscalist kan aan de slag\"}"
+            "value": {
+              "body": "[BOX3_STATE] SIGNED_AND_PAID\n[BOX3_FLOW] Email 5 verzonden: Bevestiging betaling & opdracht\n[BOX3_FLOW] Klant is volledig onboarded - Fiscalist kan aan de slag"
+            }
           },
           {
             "type": "status",
@@ -659,7 +717,9 @@
           },
           {
             "type": "note",
-            "value": "{\"body\": \"[AI_DRAFT] Webhook called to generate draft reply for agent review\"}"
+            "value": {
+              "body": "[AI_DRAFT] Webhook called to generate draft reply for agent review"
+            }
           }
         ]
       ]
