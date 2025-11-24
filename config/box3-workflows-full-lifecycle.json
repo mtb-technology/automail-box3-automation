@@ -1,5 +1,5 @@
 {
-  "description": "Box 3 Complete Lifecycle - Documents → Analysis → Questions → Offer → Payment → Confirmation (16 workflows)",
+  "description": "Box 3 Complete Lifecycle - Documents → Analysis → Questions → Offer → Payment → Confirmation (15 workflows)",
   "mailbox_id": 3,
   "webhook_url": "http://localhost:3000/webhook/detect-intent",
   "workflows": [
@@ -40,57 +40,7 @@
       ]
     },
     {
-      "name": "Box3 - 2. Email: Upload Request (DOCS_REQUESTED)",
-      "description": "Asks customer to upload tax return - sent after welcome email",
-      "type": 1,
-      "active": true,
-      "max_executions": 1,
-      "apply_to_prev": false,
-      "conditions": [
-        [
-          {
-            "type": "body",
-            "operator": "contains",
-            "value": "[BOX3_FLOW] Email 1 verzonden"
-          }
-        ],
-        [
-          {
-            "type": "waiting",
-            "operator": "longer",
-            "value": {
-              "number": 2,
-              "metric": "i"
-            }
-          }
-        ]
-      ],
-      "actions": [
-        [
-          {
-            "type": "reply",
-            "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Om uw Box 3 bezwaar correct te kunnen beoordelen, hebben wij uw meest recente aangifte inkomstenbelasting nodig.</p>\n\n<p><strong>Wat wij nodig hebben:</strong></p>\n<ul>\n<li>Uw aangifte inkomstenbelasting (laatste jaar)</li>\n<li>Eventuele bijlagen of toelichting</li>\n</ul>\n\n<p><strong>Hoe te uploaden:</strong><br>\nBeantwoord deze e-mail en voeg de documenten als bijlage toe.</p>\n\n<p><strong>Bestandsformaten:</strong><br>\nPDF, JPG, PNG, of DOC/DOCX</p>\n\n<p>Wij verwerken uw aangifte binnen 1-2 werkdagen.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
-              "cc": "",
-              "bcc": "",
-              "conv_history": "none"
-            }
-          },
-          {
-            "type": "add_tag",
-            "value": "DOCS_REQUESTED"
-          },
-          {
-            "type": "note",
-            "value": {
-              "body": "[BOX3_STATE] Status: DOCS_REQUESTED\n[BOX3_FLOW] Email 2 verzonden: Upload aangifte"
-            }
-          }
-        ]
-      ]
-    },
-    {
-      "name": "Box3 - 3. Detect: Document Upload (Simple Attachment Check)",
+      "name": "Box3 - 2. Detect: Document Upload (Simple Attachment Check)",
       "description": "Detects when customer uploads documents via attachment - NO AI needed",
       "type": 1,
       "active": true,
@@ -139,7 +89,7 @@
       ]
     },
     {
-      "name": "Box3 - 4. Detect Intent: Customer Reply (NON-attachment replies)",
+      "name": "Box3 - 3. Detect Intent: Customer Reply (NON-attachment replies)",
       "description": "Detects customer intent from their reply using OpenAI webhook (for replies WITHOUT attachments)",
       "type": 1,
       "active": true,
@@ -195,7 +145,7 @@
       ]
     },
     {
-      "name": "Box3 - 5. Route: DOCS_RECEIVED → Intake",
+      "name": "Box3 - 4. Route: DOCS_RECEIVED → Intake",
       "description": "When documents uploaded, assign to Intake Agent for review",
       "type": 1,
       "active": true,
@@ -235,7 +185,7 @@
       ]
     },
     {
-      "name": "Box3 - 6. Reminder 1: Docs Not Received (2 days)",
+      "name": "Box3 - 5. Reminder 1: Docs Not Received (2 days)",
       "description": "First reminder if no documents after 2 days",
       "type": 1,
       "active": true,
@@ -272,7 +222,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben nog geen aangifte van u ontvangen.</p>\n\n<p><strong>Waarom hebben we dit nodig?</strong><br>\nUw aangifte is cruciaal om te bepalen hoeveel u kunt terugkrijgen van Box 3.</p>\n\n<p><strong>Nog vragen over het uploaden?</strong><br>\nNeem gerust contact met ons op.</p>\n\n<p>Beantwoord deze e-mail met uw aangifte als bijlage.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben nog geen aangifte van u ontvangen.</p>\n\n<p><strong>Waarom hebben we dit nodig?</strong><br>\nUw aangifte is cruciaal om te bepalen hoeveel u kunt terugkrijgen van Box 3.</p>\n\n<p><strong>Nog vragen over het uploaden?</strong><br>\nNeem gerust contact met ons op.</p>\n\n<p>Beantwoord deze e-mail met uw aangifte als bijlage.</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -288,7 +238,7 @@
       ]
     },
     {
-      "name": "Box3 - 7. Reminder 2: Docs Not Received (7 days)",
+      "name": "Box3 - 6. Reminder 2: Docs Not Received (7 days)",
       "description": "Final reminder if no documents after 7 days",
       "type": 1,
       "active": true,
@@ -325,7 +275,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben na 7 dagen nog steeds geen aangifte ontvangen.</p>\n\n<p><strong>Heeft u problemen met uploaden?</strong><br>\nNeem contact op - wij helpen graag!</p>\n\n<p><strong>Wilt u niet meer verder?</strong><br>\nLaat het ons weten, dan sluiten wij uw aanvraag af.</p>\n\n<p><strong>Wilt u toch doorgaan?</strong><br>\nStuur uw aangifte als bijlage in een antwoord op deze e-mail.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben na 7 dagen nog steeds geen aangifte ontvangen.</p>\n\n<p><strong>Heeft u problemen met uploaden?</strong><br>\nNeem contact op - wij helpen graag!</p>\n\n<p><strong>Wilt u niet meer verder?</strong><br>\nLaat het ons weten, dan sluiten wij uw aanvraag af.</p>\n\n<p><strong>Wilt u toch doorgaan?</strong><br>\nStuur uw aangifte als bijlage in een antwoord op deze e-mail.</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -341,7 +291,7 @@
       ]
     },
     {
-      "name": "Box3 - 8. MANUAL: Send Dynamic Questions",
+      "name": "Box3 - 7. MANUAL: Send Dynamic Questions",
       "description": "Manually send additional questions after document analysis - executed by Intake Agent",
       "type": 2,
       "active": true,
@@ -352,7 +302,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben uw aangifte beoordeeld en hebben enkele aanvullende vragen om een zo accuraat mogelijk voorstel te maken.</p>\n\n<p><strong>WONING (indien van toepassing):</strong></p>\n<ul>\n<li>Wanneer gekocht/verkocht?</li>\n<li>Is de WOZ-waarde correct?</li>\n<li>Eigen woning of beleggingspand?</li>\n</ul>\n\n<p><strong>BELEGGINGEN (indien van toepassing):</strong></p>\n<ul>\n<li>Bij welke banken/brokers?</li>\n<li>Zijn er leningen voor deze beleggingen?</li>\n</ul>\n\n<p><strong>SPAARGELD (indien van toepassing):</strong></p>\n<ul>\n<li>Buitenlandse rekeningen?</li>\n<li>Grote schommelingen rond peildatum?</li>\n</ul>\n\n<p><strong>SCHULDEN/OVERIG (indien van toepassing):</strong></p>\n<ul>\n<li>Soort schuld?</li>\n<li>Onderbouwing/contract aanwezig?</li>\n</ul>\n\n<p><strong>Antwoord direct op deze e-mail of vul dit formulier in:</strong><br>\n[LINK NAAR VRAGENFORMULIER - Wordt toegevoegd door agent]</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team - Intake</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben uw aangifte beoordeeld en hebben enkele aanvullende vragen om een zo accuraat mogelijk voorstel te maken.</p>\n\n<p><strong>WONING (indien van toepassing):</strong></p>\n<ul>\n<li>Wanneer gekocht/verkocht?</li>\n<li>Is de WOZ-waarde correct?</li>\n<li>Eigen woning of beleggingspand?</li>\n</ul>\n\n<p><strong>BELEGGINGEN (indien van toepassing):</strong></p>\n<ul>\n<li>Bij welke banken/brokers?</li>\n<li>Zijn er leningen voor deze beleggingen?</li>\n</ul>\n\n<p><strong>SPAARGELD (indien van toepassing):</strong></p>\n<ul>\n<li>Buitenlandse rekeningen?</li>\n<li>Grote schommelingen rond peildatum?</li>\n</ul>\n\n<p><strong>SCHULDEN/OVERIG (indien van toepassing):</strong></p>\n<ul>\n<li>Soort schuld?</li>\n<li>Onderbouwing/contract aanwezig?</li>\n</ul>\n\n<p><strong>Antwoord direct op deze e-mail of vul dit formulier in:</strong><br>\n[LINK NAAR VRAGENFORMULIER - Wordt toegevoegd door agent]</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -372,7 +322,7 @@
       ]
     },
     {
-      "name": "Box3 - 9. Route: QUESTIONS_ANSWERED → Fiscalist",
+      "name": "Box3 - 8. Route: QUESTIONS_ANSWERED → Fiscalist",
       "description": "When customer answers questions, assign to fiscalist for final assessment",
       "type": 1,
       "active": true,
@@ -408,7 +358,7 @@
       ]
     },
     {
-      "name": "Box3 - 10. MANUAL: Send Offer & Payment",
+      "name": "Box3 - 9. MANUAL: Send Offer & Payment",
       "description": "Manually send final offer - executed by Fiscalist after calculating offer",
       "type": 2,
       "active": true,
@@ -419,7 +369,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p><strong>Goed nieuws!</strong> Op basis van uw gegevens hebben wij een voorstel voor u gemaakt.</p>\n\n<p><strong>Verwacht voordeel:</strong></p>\n<p>Wij verwachten dat uw voordeel tussen €[MIN] en €[MAX] ligt.</p>\n\n<p><strong>Onze vergoeding:</strong></p>\n<p>Onze vergoeding bedraagt €[FEE] / [Y]% van het behaalde voordeel.</p>\n\n<p><strong>Netto voordeel (indicatie):</strong></p>\n<p>Tussen €[NET_MIN] en €[NET_MAX]</p>\n\n<p><strong>Wat wij voor u doen:</strong></p>\n<p>✓ Indienen bezwaar bij Belastingdienst</p>\n<p>✓ Correspondentie met Belastingdienst</p>\n<p>✓ Bewaking deadlines</p>\n<p>✓ Optimalisatie van uw positie</p>\n\n<p><strong>Volgende stap:</strong></p>\n<p>Klik op de knop hieronder om akkoord te gaan, te ondertekenen en te betalen.</p>\n\n<p>[ONDERTEKEN & BETAAL] ← Link wordt toegevoegd door Quote Agent</p>\n\n<p><strong>Vragen?</strong></p>\n<p>Neem gerust contact met ons op.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>\n\n<p>---</p>\n<p>Slagingskans: [HOOG/MIDDEL/LAAG]</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p><strong>Goed nieuws!</strong> Op basis van uw gegevens hebben wij een voorstel voor u gemaakt.</p>\n\n<p><strong>Verwacht voordeel:</strong></p>\n<p>Wij verwachten dat uw voordeel tussen €[MIN] en €[MAX] ligt.</p>\n\n<p><strong>Onze vergoeding:</strong></p>\n<p>Onze vergoeding bedraagt €[FEE] / [Y]% van het behaalde voordeel.</p>\n\n<p><strong>Netto voordeel (indicatie):</strong></p>\n<p>Tussen €[NET_MIN] en €[NET_MAX]</p>\n\n<p><strong>Wat wij voor u doen:</strong></p>\n<p>✓ Indienen bezwaar bij Belastingdienst</p>\n<p>✓ Correspondentie met Belastingdienst</p>\n<p>✓ Bewaking deadlines</p>\n<p>✓ Optimalisatie van uw positie</p>\n\n<p><strong>Volgende stap:</strong></p>\n<p>Klik op de knop hieronder om akkoord te gaan, te ondertekenen en te betalen.</p>\n\n<p>[ONDERTEKEN & BETAAL] ← Link wordt toegevoegd door Quote Agent</p>\n\n<p><strong>Vragen?</strong></p>\n<p>Neem gerust contact met ons op.</p>\n\n<p>---</p>\n<p>Slagingskans: [HOOG/MIDDEL/LAAG]</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -444,7 +394,7 @@
       ]
     },
     {
-      "name": "Box3 - 11. Reminder 1: Offer Not Accepted (3 days)",
+      "name": "Box3 - 10. Reminder 1: Offer Not Accepted (3 days)",
       "description": "Reminder if no response to offer after 3 days",
       "type": 1,
       "active": true,
@@ -481,7 +431,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben u 3 dagen geleden een voorstel gestuurd maar hebben nog geen reactie ontvangen.</p>\n\n<p><strong>Heeft u vragen over het voorstel?</strong></p>\n<p>Bel of mail ons - we helpen graag met een toelichting.</p>\n\n<p><strong>Veelgestelde vragen:</strong></p>\n<ul>\n<li>Wat gebeurt er na ondertekening?</li>\n<li>Hoe werkt de betaling?</li>\n<li>Wat als de Belastingdienst afwijst?</li>\n</ul>\n\n<p>[LINK NAAR FAQ]</p>\n\n<p><strong>Direct akkoord?</strong></p>\n<p>[ONDERTEKEN & BETAAL]</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben u 3 dagen geleden een voorstel gestuurd maar hebben nog geen reactie ontvangen.</p>\n\n<p><strong>Heeft u vragen over het voorstel?</strong></p>\n<p>Bel of mail ons - we helpen graag met een toelichting.</p>\n\n<p><strong>Veelgestelde vragen:</strong></p>\n<ul>\n<li>Wat gebeurt er na ondertekening?</li>\n<li>Hoe werkt de betaling?</li>\n<li>Wat als de Belastingdienst afwijst?</li>\n</ul>\n\n<p>[LINK NAAR FAQ]</p>\n\n<p><strong>Direct akkoord?</strong></p>\n<p>[ONDERTEKEN & BETAAL]</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -497,7 +447,7 @@
       ]
     },
     {
-      "name": "Box3 - 12. Reminder 2: Final Offer Reminder (10 days)",
+      "name": "Box3 - 11. Reminder 2: Final Offer Reminder (10 days)",
       "description": "Final reminder with option to decline after 10 days",
       "type": 1,
       "active": true,
@@ -534,7 +484,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben na 10 dagen nog geen reactie ontvangen op ons voorstel.</p>\n\n<p><strong>Heeft u hulp nodig?</strong></p>\n<p>Onze adviseurs staan klaar om uw vragen te beantwoorden.</p>\n<p>Bel ons: [TELEFOONNUMMER]</p>\n\n<p><strong>Wilt u doorgaan?</strong></p>\n<p>[ONDERTEKEN & BETAAL]</p>\n\n<p><strong>Wilt u niet meer verder?</strong></p>\n<p>Antwoord met \"Ik wil niet verder\" en wij sluiten uw dossier af.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Wij hebben na 10 dagen nog geen reactie ontvangen op ons voorstel.</p>\n\n<p><strong>Heeft u hulp nodig?</strong></p>\n<p>Onze adviseurs staan klaar om uw vragen te beantwoorden.</p>\n<p>Bel ons: [TELEFOONNUMMER]</p>\n\n<p><strong>Wilt u doorgaan?</strong></p>\n<p>[ONDERTEKEN & BETAAL]</p>\n\n<p><strong>Wilt u niet meer verder?</strong></p>\n<p>Antwoord met \"Ik wil niet verder\" en wij sluiten uw dossier af.</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -550,7 +500,7 @@
       ]
     },
     {
-      "name": "Box3 - 13. Route: CLOSED_LOST",
+      "name": "Box3 - 12. Route: CLOSED_LOST",
       "description": "When customer explicitly declines, close gracefully",
       "type": 1,
       "active": true,
@@ -570,7 +520,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Bedankt dat u de tijd heeft genomen om onze dienstverlening te overwegen.</p>\n\n<p>Wij begrijpen dat u heeft besloten om niet verder te gaan. Mocht u in de toekomst toch behoefte hebben aan ondersteuning bij uw Box 3 bezwaar of andere fiscale zaken, dan staan wij altijd voor u klaar.</p>\n\n<p><strong>Nog vragen?</strong></p>\n<p>Ook als u niet doorgaat, helpen we u graag met algemene vragen over Box 3.</p>\n\n<p>Wij wensen u veel succes!</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Bedankt dat u de tijd heeft genomen om onze dienstverlening te overwegen.</p>\n\n<p>Wij begrijpen dat u heeft besloten om niet verder te gaan. Mocht u in de toekomst toch behoefte hebben aan ondersteuning bij uw Box 3 bezwaar of andere fiscale zaken, dan staan wij altijd voor u klaar.</p>\n\n<p><strong>Nog vragen?</strong></p>\n<p>Ook als u niet doorgaat, helpen we u graag met algemene vragen over Box 3.</p>\n\n<p>Wij wensen u veel succes!</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -591,7 +541,7 @@
       ]
     },
     {
-      "name": "Box3 - 14. Route: Proposal Accepted → Payment",
+      "name": "Box3 - 13. Route: Proposal Accepted → Payment",
       "description": "When proposal accepted, send payment & sign link email",
       "type": 1,
       "active": true,
@@ -611,7 +561,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Bedankt voor uw akkoord op ons voorstel!</p>\n\n<p><strong>Volgende stappen:</strong></p>\n\n<p>1. <strong>Onderteken de opdracht</strong></p>\n<p>[ONDERTEKENEN - Link wordt toegevoegd]</p>\n\n<p>2. <strong>Betaling voldoen</strong></p>\n<p>[BETAALLINK - Link wordt toegevoegd]</p>\n\n<p><strong>Bedrag:</strong> € [BEDRAG]</p>\n\n<p><strong>Na betaling:</strong></p>\n<ul>\n<li>Wij starten direct met uw Box 3 bezwaar</li>\n<li>U ontvangt bevestiging van ontvangst</li>\n<li>Verwachte doorlooptijd: 2-4 weken</li>\n</ul>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Bedankt voor uw akkoord op ons voorstel!</p>\n\n<p><strong>Volgende stappen:</strong></p>\n\n<p>1. <strong>Onderteken de opdracht</strong></p>\n<p>[ONDERTEKENEN - Link wordt toegevoegd]</p>\n\n<p>2. <strong>Betaling voldoen</strong></p>\n<p>[BETAALLINK - Link wordt toegevoegd]</p>\n\n<p><strong>Bedrag:</strong> € [BEDRAG]</p>\n\n<p><strong>Na betaling:</strong></p>\n<ul>\n<li>Wij starten direct met uw Box 3 bezwaar</li>\n<li>U ontvangt bevestiging van ontvangst</li>\n<li>Verwachte doorlooptijd: 2-4 weken</li>\n</ul>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -636,7 +586,7 @@
       ]
     },
     {
-      "name": "Box3 - 15. Email 5: Payment & Assignment Confirmation (SIGNED_AND_PAID)",
+      "name": "Box3 - 14. Email 5: Payment & Assignment Confirmation (SIGNED_AND_PAID)",
       "description": "Send confirmation email when customer has signed and paid (triggered by webhook)",
       "type": 1,
       "active": true,
@@ -656,7 +606,7 @@
           {
             "type": "reply",
             "value": {
-              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Hartelijk dank! Wij hebben uw ondertekende opdracht en betaling in goede orde ontvangen.</p>\n\n<p><strong>Overzicht:</strong></p>\n\n<p>📅 <strong>Datum betaling:</strong> {{payment_date}}</p>\n<p>💶 <strong>Betaald bedrag:</strong> € {{payment_amount}}</p>\n<p>🔖 <strong>Referentienummer:</strong> {{reference_number}}</p>\n\n<p><strong>Wat gebeurt er nu?</strong></p>\n\n<p>Onze fiscalisten gaan direct aan de slag met uw dossier. U hoeft voorlopig niets te doen.</p>\n\n<p><strong>U ontvangt bericht zodra:</strong></p>\n<ul>\n<li>Wij uw bezwaarschrift hebben ingediend</li>\n<li>De Belastingdienst heeft gereageerd</li>\n<li>Er aanvullende informatie nodig is</li>\n</ul>\n\n<p><strong>Vragen?</strong></p>\n<p>Neem gerust contact met ons op. Wij houden u op de hoogte van alle ontwikkelingen.</p>\n\n<p>Met vriendelijke groet,</p>\n\n<p>Box 3 Team</p>\n\n<p>---</p>\n<p>*Verwachte doorlooptijd: 2-4 weken voor eerste actie bij Belastingdienst*</p>",
+              "body": "<p>Beste {%customer.fullName%},</p>\n\n<p>Hartelijk dank! Wij hebben uw ondertekende opdracht en betaling in goede orde ontvangen.</p>\n\n<p><strong>Overzicht:</strong></p>\n\n<p>📅 <strong>Datum betaling:</strong> {{payment_date}}</p>\n<p>💶 <strong>Betaald bedrag:</strong> € {{payment_amount}}</p>\n<p>🔖 <strong>Referentienummer:</strong> {{reference_number}}</p>\n\n<p><strong>Wat gebeurt er nu?</strong></p>\n\n<p>Onze fiscalisten gaan direct aan de slag met uw dossier. U hoeft voorlopig niets te doen.</p>\n\n<p><strong>U ontvangt bericht zodra:</strong></p>\n<ul>\n<li>Wij uw bezwaarschrift hebben ingediend</li>\n<li>De Belastingdienst heeft gereageerd</li>\n<li>Er aanvullende informatie nodig is</li>\n</ul>\n\n<p><strong>Vragen?</strong></p>\n<p>Neem gerust contact met ons op. Wij houden u op de hoogte van alle ontwikkelingen.</p>\n\n<p>---</p>\n<p>*Verwachte doorlooptijd: 2-4 weken voor eerste actie bij Belastingdienst*</p>",
               "cc": "",
               "bcc": "",
               "conv_history": "none"
@@ -677,7 +627,7 @@
       ]
     },
     {
-      "name": "Box3 - 16. AI Draft: Generate Reply for Agent",
+      "name": "Box3 - 15. AI Draft: Generate Reply for Agent",
       "description": "When agent assigned and customer replies, generate AI draft",
       "type": 1,
       "active": true,

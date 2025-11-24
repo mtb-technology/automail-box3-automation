@@ -73,6 +73,50 @@ function extractWebhookEvents(workflows) {
 }
 
 /**
+ * Get all existing webhooks from FreeScout
+ */
+async function getExistingWebhooks() {
+  try {
+    console.log(`📋 Fetching existing webhooks...`);
+
+    const response = await client.get(
+      `${FREESCOUT_BASE_URL}/api/webhooks`,
+      {
+        headers: {
+          'X-Automail-API-Key': FREESCOUT_API_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const webhooks = response.data._embedded?.webhooks || [];
+    console.log(`✅ Found ${webhooks.length} existing webhooks\n`);
+    return webhooks;
+  } catch (error) {
+    console.error(`❌ Failed to fetch existing webhooks`);
+    console.error(`   Error: ${error.response?.data?.message || error.message}`);
+    // Return empty array if fetch fails - we'll try to register and let the API handle duplicates
+    return [];
+  }
+}
+
+/**
+ * Check if a webhook already exists for the given URL and events
+ */
+function webhookExists(existingWebhooks, url, events) {
+  return existingWebhooks.some(webhook => {
+    // Check if URL matches
+    if (webhook.url !== url) return false;
+
+    // Check if all events are already registered
+    const existingEvents = webhook.events || [];
+    const allEventsExist = events.every(event => existingEvents.includes(event));
+
+    return allEventsExist;
+  });
+}
+
+/**
  * Register a webhook in FreeScout
  */
 async function registerWebhook(webhookConfig, mailboxId) {
@@ -291,6 +335,9 @@ async function deployWorkflows() {
       console.log();
     }
 
+    // Fetch existing webhooks first
+    const existingWebhooks = await getExistingWebhooks();
+
     const webhookResults = {
       success: [],
       failed: [],
@@ -299,7 +346,24 @@ async function deployWorkflows() {
 
     for (let i = 0; i < webhookEvents.length; i++) {
       const webhookConfig = webhookEvents[i];
-      console.log(`\n[${i + 1}/${webhookEvents.length}] Registering webhook...`);
+      console.log(`\n[${i + 1}/${webhookEvents.length}] Processing webhook...`);
+
+      // Check if webhook already exists
+      if (webhookExists(existingWebhooks, webhookConfig.url, webhookConfig.events)) {
+        console.log(`⚠️  Webhook already exists - skipping registration`);
+        console.log(`   URL: ${webhookConfig.url}`);
+        console.log(`   Events: ${webhookConfig.events.join(', ')}`);
+
+        webhookResults.alreadyExists.push({
+          events: webhookConfig.events,
+          url: webhookConfig.url
+        });
+
+        continue;
+      }
+
+      // Webhook doesn't exist, try to register it
+      console.log(`🔗 Webhook not found - registering new webhook`);
 
       try {
         const result = await registerWebhook(webhookConfig, mailboxId);

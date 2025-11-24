@@ -1,19 +1,24 @@
 #!/usr/bin/env node
 
 /**
- * Update specific workflows in FreeScout with corrected webhook format
- * Updates only the webhook actions for workflows 1, 4, and 16
+ * Update existing Box3 Workflows in FreeScout
+ * Updates workflows in-place to preserve their IDs
  */
 
 import axios from 'axios';
 import https from 'https';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const FREESCOUT_BASE_URL = process.env.FREESCOUT_BASE_URL || 'https://freescout.test';
-const FREESCOUT_API_TOKEN = process.env.FREESCOUT_API_TOKEN;
+const FREESCOUT_API_TOKEN = process.env.FREESCOUT_API_TOKEN || process.env.FREESCOUT_API_KEY;
 
 // Create axios instance with SSL verification disabled for local testing
 const client = axios.create({
@@ -22,57 +27,15 @@ const client = axios.create({
   })
 });
 
-// Workflow updates: workflow_id => new actions array
-const WORKFLOW_UPDATES = {
-  61: { // Workflow 1: Welcome
-    name: "Box3 - 1. Welcome: New Conversation (AI-Generated)",
-    webhook_value: "workflow.convo.box3.welcome.generate"
-  },
-  64: { // Workflow 4: Intent Detection
-    name: "Box3 - 4. Detect Intent: Customer Reply (NON-attachment replies)",
-    webhook_value: "workflow.convo.box3.intent.detect"
-  },
-  76: { // Workflow 16: AI Draft
-    name: "Box3 - 16. AI Draft: Generate Reply for Agent",
-    webhook_value: "workflow.convo.box3.draft.generate"
-  }
-};
-
 /**
- * Delete a workflow
+ * Get all existing workflows from FreeScout
  */
-async function deleteWorkflow(workflowId, mailboxId) {
+async function getExistingWorkflows(mailboxId) {
   try {
-    console.log(`🗑️  Deleting workflow ID: ${workflowId}...`);
+    console.log(`📋 Fetching existing workflows from mailbox ${mailboxId}...`);
 
-    await client.delete(
-      `${FREESCOUT_BASE_URL}/api/mailbox/${mailboxId}/workflows/${workflowId}`,
-      {
-        headers: {
-          'X-Automail-API-Key': FREESCOUT_API_TOKEN
-        }
-      }
-    );
-
-    console.log(`✅ Deleted workflow ID: ${workflowId}`);
-    return true;
-  } catch (error) {
-    console.error(`❌ Failed to delete workflow ${workflowId}`);
-    console.error(`   Error: ${error.response?.data?.message || error.message}`);
-    return false;
-  }
-}
-
-/**
- * Recreate a workflow with correct webhook format
- */
-async function recreateWorkflow(workflowData, mailboxId) {
-  try {
-    console.log(`📝 Recreating: ${workflowData.name}...`);
-
-    const response = await client.post(
+    const response = await client.get(
       `${FREESCOUT_BASE_URL}/api/mailbox/${mailboxId}/workflows`,
-      workflowData,
       {
         headers: {
           'X-Automail-API-Key': FREESCOUT_API_TOKEN,
@@ -81,10 +44,47 @@ async function recreateWorkflow(workflowData, mailboxId) {
       }
     );
 
-    console.log(`✅ Recreated workflow with new ID: ${response.data.id}`);
+    const workflows = response.data._embedded?.workflows || [];
+    console.log(`✅ Found ${workflows.length} existing workflows\n`);
+    return workflows;
+  } catch (error) {
+    console.error(`❌ Failed to fetch existing workflows`);
+    console.error(`   Error: ${error.response?.data?.message || error.message}`);
+    throw error;
+  }
+}
+
+/**
+ * Update a single workflow in FreeScout
+ */
+async function updateWorkflow(workflowId, workflowData, mailboxId) {
+  try {
+    console.log(`📝 Updating: ${workflowData.name} (ID: ${workflowId})`);
+
+    const response = await client.put(
+      `${FREESCOUT_BASE_URL}/api/mailbox/${mailboxId}/workflows/${workflowId}`,
+      {
+        name: workflowData.name,
+        description: workflowData.description || '',
+        type: workflowData.type,
+        active: workflowData.active,
+        conditions: workflowData.conditions,
+        actions: workflowData.actions,
+        max_executions: workflowData.max_executions || 999,
+        apply_to_prev: workflowData.apply_to_prev || false
+      },
+      {
+        headers: {
+          'X-Automail-API-Key': FREESCOUT_API_TOKEN,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log(`✅ Updated workflow ID: ${workflowId}`);
     return response.data;
   } catch (error) {
-    console.error(`❌ Failed to recreate workflow: ${workflowData.name}`);
+    console.error(`❌ Failed to update workflow: ${workflowData.name} (ID: ${workflowId})`);
     console.error(`   Error: ${error.response?.data?.message || error.message}`);
     if (error.response?.data) {
       console.error(`   Details:`, JSON.stringify(error.response.data, null, 2));
@@ -99,14 +99,23 @@ async function recreateWorkflow(workflowData, mailboxId) {
 async function updateWorkflows() {
   try {
     console.log('╔════════════════════════════════════════════════════════╗');
-    console.log('║   Update Webhook Format for 3 Workflows               ║');
+    console.log('║   Box3 Workflow Update (Preserve IDs)                 ║');
     console.log('╚════════════════════════════════════════════════════════╝\n');
 
     // Read workflow configuration
-    const configPath = './box3-workflows-full-lifecycle.json';
+    const configPath = path.join(__dirname, '..', 'config', 'box3-workflows-full-lifecycle.json');
+    console.log(`📖 Reading workflows from: ${configPath}`);
+
+    if (!fs.existsSync(configPath)) {
+      console.error(`❌ File not found: ${configPath}`);
+      process.exit(1);
+    }
+
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     const mailboxId = config.mailbox_id;
+    const newWorkflows = config.workflows;
 
+    console.log(`📦 Found ${newWorkflows.length} workflows in config`);
     console.log(`🎯 Target mailbox ID: ${mailboxId}`);
     console.log(`🌐 FreeScout URL: ${FREESCOUT_BASE_URL}\n`);
 
@@ -115,58 +124,58 @@ async function updateWorkflows() {
       process.exit(1);
     }
 
-    // Map workflow indices to data
-    const workflowsToUpdate = [
-      { oldId: 61, index: 0 },  // Workflow 1
-      { oldId: 64, index: 3 },  // Workflow 4
-      { oldId: 76, index: 15 }  // Workflow 16
-    ];
+    // Get existing workflows
+    const existingWorkflows = await getExistingWorkflows(mailboxId);
+
+    // Create a map of existing workflows by name
+    const existingWorkflowMap = new Map();
+    existingWorkflows.forEach(workflow => {
+      existingWorkflowMap.set(workflow.name, workflow);
+    });
+
+    console.log('╔════════════════════════════════════════════════════════╗');
+    console.log('║   Updating Workflows                                   ║');
+    console.log('╚════════════════════════════════════════════════════════╝\n');
 
     const results = {
-      success: [],
+      updated: [],
+      notFound: [],
       failed: []
     };
 
-    // Process each workflow
-    for (const { oldId, index } of workflowsToUpdate) {
-      console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`Processing workflow ${oldId} (${config.workflows[index].name})...`);
-      console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
+    // Update workflows one by one
+    for (let i = 0; i < newWorkflows.length; i++) {
+      const workflow = newWorkflows[i];
+      console.log(`\n[${i + 1}/${newWorkflows.length}] Processing workflow...`);
 
-      const workflowData = config.workflows[index];
+      const existingWorkflow = existingWorkflowMap.get(workflow.name);
+
+      if (!existingWorkflow) {
+        console.log(`⚠️  Workflow not found in FreeScout: ${workflow.name}`);
+        console.log(`   This workflow needs to be created with: npm run deploy`);
+        results.notFound.push(workflow.name);
+        continue;
+      }
 
       try {
-        // Delete old workflow
-        const deleted = await deleteWorkflow(oldId, mailboxId);
+        await updateWorkflow(existingWorkflow.id, workflow, mailboxId);
+        results.updated.push({
+          name: workflow.name,
+          id: existingWorkflow.id
+        });
 
-        if (deleted) {
-          // Wait a bit before recreating
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          // Recreate with new format
-          const result = await recreateWorkflow(workflowData, mailboxId);
-
-          results.success.push({
-            name: workflowData.name,
-            oldId: oldId,
-            newId: result.id
-          });
-        } else {
-          results.failed.push({
-            name: workflowData.name,
-            oldId: oldId,
-            error: 'Failed to delete'
-          });
-        }
-
-        // Small delay between workflows
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Small delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error) {
         results.failed.push({
-          name: workflowData.name,
-          oldId: oldId,
+          name: workflow.name,
+          id: existingWorkflow.id,
           error: error.message
         });
+
+        // Ask if we should continue
+        console.log('\n⚠️  Workflow update failed. Continue with remaining workflows? (Ctrl+C to abort)');
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
 
@@ -175,21 +184,29 @@ async function updateWorkflows() {
     console.log('║   Update Summary                                       ║');
     console.log('╚════════════════════════════════════════════════════════╝\n');
 
-    console.log(`✅ Successfully updated: ${results.success.length}/3 workflows`);
+    console.log(`✅ Successfully updated: ${results.updated.length}/${newWorkflows.length} workflows`);
 
-    if (results.success.length > 0) {
+    if (results.updated.length > 0) {
       console.log('\n📋 Updated workflows:');
-      results.success.forEach((w, i) => {
-        console.log(`   ${i + 1}. ${w.name}`);
-        console.log(`      Old ID: ${w.oldId} → New ID: ${w.newId}`);
+      results.updated.forEach((w, i) => {
+        console.log(`   ${i + 1}. [ID: ${w.id}] ${w.name}`);
       });
+    }
+
+    if (results.notFound.length > 0) {
+      console.log(`\n⚠️  Not found: ${results.notFound.length} workflows`);
+      console.log('\n📋 Workflows not found in FreeScout:');
+      results.notFound.forEach((name, i) => {
+        console.log(`   ${i + 1}. ${name}`);
+      });
+      console.log('\n   Run "npm run deploy" to create these workflows.');
     }
 
     if (results.failed.length > 0) {
       console.log(`\n❌ Failed: ${results.failed.length} workflows`);
       console.log('\n📋 Failed workflows:');
       results.failed.forEach((w, i) => {
-        console.log(`   ${i + 1}. ${w.name} (ID: ${w.oldId})`);
+        console.log(`   ${i + 1}. [ID: ${w.id}] ${w.name}`);
         console.log(`      Error: ${w.error}`);
       });
     }
@@ -197,7 +214,7 @@ async function updateWorkflows() {
     console.log('\n✨ Update complete!\n');
 
     if (results.failed.length > 0) {
-      console.log('⚠️  Some workflows failed. Check the errors above.\n');
+      console.log('⚠️  Some workflows failed to update. Check the errors above.\n');
       process.exit(1);
     }
 

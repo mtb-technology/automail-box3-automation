@@ -713,15 +713,22 @@ Generate a personalized welcome email in ${languageName} that acknowledges their
 /**
  * Send email to customer via FreeScout
  */
-async function sendEmailToCustomer(conversationId, subject, body) {
+async function sendEmailToCustomer(conversationId, subject, body, scheduledAt = null) {
   try {
+    const requestBody = {
+      type: 'message',
+      text: body,  // FreeScout uses "text" not "body"
+      user: 1      // System user
+    };
+
+    // Add scheduledAt if provided
+    if (scheduledAt) {
+      requestBody.scheduledAt = scheduledAt;
+    }
+
     const response = await axios.post(
       `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
-      {
-        type: 'message',
-        text: body,  // FreeScout uses "text" not "body"
-        user: 1      // System user
-      },
+      requestBody,
       {
         headers: {
           'X-Automail-API-Key': CONFIG.freescoutApiKey,
@@ -731,7 +738,11 @@ async function sendEmailToCustomer(conversationId, subject, body) {
       }
     );
 
-    console.log(`✅ Email sent to customer in conversation ${conversationId}`);
+    if (scheduledAt) {
+      console.log(`✅ Email scheduled for ${new Date(scheduledAt).toLocaleString()} in conversation ${conversationId}`);
+    } else {
+      console.log(`✅ Email sent to customer in conversation ${conversationId}`);
+    }
     return response.data;
   } catch (error) {
     console.error('❌ Failed to send email:', error.response?.data || error.message);
@@ -908,19 +919,76 @@ async function handleWelcomeGenerate(conversation, res) {
       welcomeEmailBody
     );
 
-    // Add note about AI generation
-    await addNote(
+    // Calculate scheduled time: now + 30 minutes
+    const scheduledTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+    const scheduledTimeISO = scheduledTime.toISOString();
+
+    // Create Email 2: Upload Request (scheduled for 30 minutes from now)
+    const uploadRequestBody = language === 'en'
+      ? `<p>Dear {%customer.fullName%},</p>
+
+<p>To properly assess your Box 3 objection, we need your most recent income tax return.</p>
+
+<p><strong>What we need:</strong></p>
+<ul>
+<li>Your income tax return (latest year)</li>
+<li>Any attachments or explanations</li>
+</ul>
+
+<p><strong>How to upload:</strong><br>
+Reply to this email and attach the documents.</p>
+
+<p><strong>File formats:</strong><br>
+PDF, JPG, PNG, or DOC/DOCX</p>
+
+<p>We will process your return within 1-2 business days.</p>`
+      : `<p>Beste {%customer.fullName%},</p>
+
+<p>Om uw Box 3 bezwaar correct te kunnen beoordelen, hebben wij uw meest recente aangifte inkomstenbelasting nodig.</p>
+
+<p><strong>Wat wij nodig hebben:</strong></p>
+<ul>
+<li>Uw aangifte inkomstenbelasting (laatste jaar)</li>
+<li>Eventuele bijlagen of toelichting</li>
+</ul>
+
+<p><strong>Hoe te uploaden:</strong><br>
+Beantwoord deze e-mail en voeg de documenten als bijlage toe.</p>
+
+<p><strong>Bestandsformaten:</strong><br>
+PDF, JPG, PNG, of DOC/DOCX</p>
+
+<p>Wij verwerken uw aangifte binnen 1-2 werkdagen.</p>`;
+
+    await sendEmailToCustomer(
       conversationId,
-      `[BOX3_FLOW] Email 1 verzonden: Welkom & Proces (AI-generated, personalized)\n\nGenerated ${welcomeEmailBody.length} characters based on customer's initial message.`
+      'Upload aangifte - Box 3 bezwaar',
+      uploadRequestBody,
+      scheduledTimeISO
     );
 
-    console.log(`✅ Welcome email sent for conversation ${conversationId}\n`);
+    // Add DOCS_REQUESTED tag
+    await updateConversationTags(conversationId, ['DOCS_REQUESTED']);
+
+    // Add note about AI generation and scheduled email
+    await addNote(
+      conversationId,
+      `[BOX3_FLOW] Email 1 verzonden: Welkom & Proces (AI-generated, personalized)
+[BOX3_FLOW] Email 2 gescheduleerd: Upload aangifte (scheduled for ${scheduledTime.toLocaleString()})
+
+Generated ${welcomeEmailBody.length} characters based on customer's initial message.`
+    );
+
+    console.log(`✅ Welcome email sent for conversation ${conversationId}`);
+    console.log(`✅ Upload request email scheduled for ${scheduledTime.toLocaleString()}`);
+    console.log(`✅ DOCS_REQUESTED tag added\n`);
 
     res.json({
       status: 'success',
       conversation_id: conversationId,
       email_length: welcomeEmailBody.length,
-      message: 'Personalized welcome email sent successfully'
+      upload_request_scheduled_at: scheduledTimeISO,
+      message: 'Welcome email sent and upload request scheduled for 30 minutes from now'
     });
 
   } catch (error) {

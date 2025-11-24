@@ -8,6 +8,7 @@
     "start": "node src/webhook-server.js",
     "deploy": "cd scripts && node deploy-workflows.js",
     "delete": "cd scripts && node delete-all-workflows.js",
+    "update": "cd scripts && node update-workflows.js",
     "test:webhook": "curl -X POST http://localhost:3000/test/detect-intent -H 'Content-Type: application/json' -d '{\"text\":\"Ik wil graag doorgaan met jullie dienst\",\"subject\":\"Box 3 bezwaar\"}'",
     "test:event": "curl -X POST http://localhost:3000/webhook/event -H 'Content-Type: application/json' -d '{\"event\":\"workflow.convo.box3.welcome.generate\",\"conversation\":{\"id\":123}}'",
     "health": "curl http://localhost:3000/health",
