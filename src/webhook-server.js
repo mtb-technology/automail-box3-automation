@@ -287,8 +287,8 @@ async function addNote(conversationId, noteText) {
       `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
       {
         type: 'note',
-        body: noteText,
-        user: 1 // System user
+        text: noteText,  // FreeScout uses "text" not "body"
+        user: 1          // System user
       },
       {
         headers: {
@@ -400,10 +400,10 @@ async function createDraftReply(conversationId, draftText, assignedUserId) {
     const response = await axios.post(
       `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
       {
-        type: 'reply',
-        body: draftText,
+        type: 'message',  // Use 'message' not 'reply'
+        text: draftText,  // FreeScout uses "text" not "body"
         user: assignedUserId || 1,
-        status: 'draft'
+        state: 'draft'    // Use 'state' not 'status' for draft
       },
       {
         headers: {
@@ -507,9 +507,8 @@ async function sendEmailToCustomer(conversationId, subject, body) {
       `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
       {
         type: 'message',
-        body: body,
-        subject: subject,
-        user: 1 // System user
+        text: body,  // FreeScout uses "text" not "body"
+        user: 1      // System user
       },
       {
         headers: {
@@ -596,8 +595,7 @@ app.post('/webhook/signed-and-paid', async (req, res) => {
 app.post('/webhook/event', async (req, res) => {
   try {
     console.log('\n🔔 FreeScout webhook event received');
-    console.log('📦 Payload:', JSON.stringify(req.body, null, 2));
-    console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
+
 
     // FreeScout sends event name in header, not body
     const event = req.headers['x-freescout-event'] || req.body.event;
