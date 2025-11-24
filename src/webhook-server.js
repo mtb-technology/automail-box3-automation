@@ -618,17 +618,18 @@ app.post('/webhook/event', async (req, res) => {
     console.log(`📫 Mailbox ID: ${mailboxId || 'not provided'}`);
 
     // Route to appropriate handler based on event name
+    // Pass the entire conversation object from req.body (no need to fetch it again)
     switch (event) {
       case 'workflow.convo.box3.welcome.generate':
-        await handleWelcomeGenerate(conversationId, res);
+        await handleWelcomeGenerate(req.body, res);
         break;
 
       case 'workflow.convo.box3.intent.detect':
-        await handleIntentDetect(conversationId, mailboxId, res);
+        await handleIntentDetect(req.body, res);
         break;
 
       case 'workflow.convo.box3.draft.generate':
-        await handleDraftGenerate(conversationId, req.body.user_id, res);
+        await handleDraftGenerate(req.body, res);
         break;
 
       default:
@@ -651,9 +652,11 @@ app.post('/webhook/event', async (req, res) => {
 /**
  * Handler for workflow.convo.box3.welcome.generate
  */
-async function handleWelcomeGenerate(conversationId, res) {
+async function handleWelcomeGenerate(conversation, res) {
   try {
     console.log('👋 Handling welcome email generation...');
+
+    const conversationId = conversation.id;
 
     if (!conversationId) {
       return res.status(400).json({
@@ -662,8 +665,6 @@ async function handleWelcomeGenerate(conversationId, res) {
       });
     }
 
-    // Get conversation details
-    const conversation = await getConversation(conversationId);
     const subject = conversation.subject || '';
     const customerName = conversation.customer?.first_name || 'klant';
 
@@ -722,9 +723,12 @@ async function handleWelcomeGenerate(conversationId, res) {
 /**
  * Handler for workflow.convo.box3.intent.detect
  */
-async function handleIntentDetect(conversationId, mailboxId, res) {
+async function handleIntentDetect(conversation, res) {
   try {
     console.log('🔍 Handling intent detection...');
+
+    const conversationId = conversation.id;
+    const mailboxId = conversation.mailbox?.id;
 
     if (!conversationId) {
       return res.status(400).json({
@@ -735,8 +739,6 @@ async function handleIntentDetect(conversationId, mailboxId, res) {
 
     console.log(`📧 Processing conversation ID: ${conversationId}, Mailbox: ${mailboxId}`);
 
-    // Get conversation details
-    const conversation = await getConversation(conversationId);
     const subject = conversation.subject || '';
 
     // Extract text from threads
@@ -792,9 +794,11 @@ async function handleIntentDetect(conversationId, mailboxId, res) {
 /**
  * Handler for workflow.convo.box3.draft.generate
  */
-async function handleDraftGenerate(conversationId, assignedUserId, res) {
+async function handleDraftGenerate(conversation, res) {
   try {
     console.log('✍️  Handling draft generation...');
+
+    const conversationId = conversation.id;
 
     if (!conversationId) {
       return res.status(400).json({
@@ -805,9 +809,7 @@ async function handleDraftGenerate(conversationId, assignedUserId, res) {
 
     console.log(`📧 Generating draft for conversation ID: ${conversationId}`);
 
-    // Get conversation details with threads
-    const conversation = await getConversation(conversationId);
-    const userId = assignedUserId || conversation.user_id;
+    const userId = conversation.user_id;
 
     // Build conversation history
     const threads = conversation._embedded?.threads || [];
