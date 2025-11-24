@@ -73,7 +73,12 @@ Guidelines:
 - Explain why you need information (helps with accurate quote)
 - If they provided partial info, acknowledge what you have
 - If dossier is complete, say: "Bedankt! We hebben alle informatie. U ontvangt binnenkort een voorstel."
-- Sign off: "Met vriendelijke groet,\\n\\nBox 3 Team - Intake"
+- Use HTML formatting for clarity where appropriate (<p>, <strong>, <ul>, <li>, etc.)
+
+IMPORTANT - NO SIGNATURES:
+- DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
+- DO NOT include sender name or company name at the end
+- The system will add these automatically - your output should END with the last sentence of content
 
 Write in Dutch unless customer wrote in English.`
   },
@@ -97,7 +102,12 @@ Guidelines:
 - Make it easy to say yes
 - Address any questions they have about options
 - If they're comparing, emphasize our expertise
-- Sign off: "Met vriendelijke groet,\\n\\nBox 3 Team - Offerte Team"
+- Use HTML formatting for clarity where appropriate (<p>, <strong>, <ul>, <li>, etc.)
+
+IMPORTANT - NO SIGNATURES:
+- DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
+- DO NOT include sender name or company name at the end
+- The system will add these automatically - your output should END with the last sentence of content
 
 Write in Dutch unless customer wrote in English.`
   },
@@ -114,7 +124,12 @@ Guidelines:
 - If they confirm payment, acknowledge and explain next steps
 - Be clear about what happens after payment
 - If questions about payment methods, explain options
-- Sign off: "Met vriendelijke groet,\\n\\nBox 3 Team - Administratie"
+- Use HTML formatting for clarity where appropriate (<p>, <strong>, <ul>, <li>, etc.)
+
+IMPORTANT - NO SIGNATURES:
+- DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
+- DO NOT include sender name or company name at the end
+- The system will add these automatically - your output should END with the last sentence of content
 
 Write in Dutch unless customer wrote in English.`
   }
@@ -128,7 +143,12 @@ Guidelines:
 - Write in Dutch unless customer wrote in English
 - Keep it concise (2-4 paragraphs)
 - Address customer questions clearly
-- Sign off: "Met vriendelijke groet,\n\nBox 3 Team"
+- Use HTML formatting for clarity where appropriate (<p>, <strong>, <ul>, <li>, etc.)
+
+IMPORTANT - NO SIGNATURES:
+- DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
+- DO NOT include sender name or company name at the end
+- The system will add these automatically - your output should END with the last sentence of content
 
 Respond with ONLY the email body, no subject line.`;
 
@@ -254,13 +274,30 @@ async function getConversation(conversationId) {
 }
 
 /**
- * Update conversation tags in FreeScout
+ * Update conversation tags in FreeScout (appends to existing tags)
  */
-async function updateConversationTags(conversationId, tags) {
+async function updateConversationTags(conversationId, newTags) {
   try {
+    // First, fetch existing tags
+    const getResponse = await axios.get(
+      `${CONFIG.freescoutUrl}/api/conversations/${conversationId}`,
+      {
+        headers: {
+          'X-Automail-API-Key': CONFIG.freescoutApiKey
+        },
+        httpsAgent: new (await import('https')).Agent({ rejectUnauthorized: false })
+      }
+    );
+
+    const existingTags = getResponse.data.tags || [];
+
+    // Merge existing tags with new tags (remove duplicates)
+    const allTags = [...new Set([...existingTags, ...newTags])];
+
+    // Update with merged tags
     const response = await axios.put(
       `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/tags`,
-      { tags },
+      { tags: allTags },
       {
         headers: {
           'X-Automail-API-Key': CONFIG.freescoutApiKey,
@@ -270,7 +307,11 @@ async function updateConversationTags(conversationId, tags) {
       }
     );
 
-    console.log(`✅ Tags updated for conversation ${conversationId}:`, tags);
+    console.log(`✅ Tags updated for conversation ${conversationId}`);
+    console.log(`   Previous: [${existingTags.join(', ')}]`);
+    console.log(`   Added: [${newTags.join(', ')}]`);
+    console.log(`   Current: [${allTags.join(', ')}]`);
+
     return response.data;
   } catch (error) {
     console.error('❌ Failed to update tags:', error.response?.data || error.message);
@@ -450,7 +491,10 @@ Your role: Create a warm, personalized welcome email that acknowledges the custo
    - Stap 4: Na akkoord verwerken wij de ondertekening en betaling
    - Stap 5: Wij starten met uw bezwaarschrift bij de Belastingdienst
 3. **Next step** - "U ontvangt binnen enkele minuten een e-mail met het verzoek om uw aangifte te uploaden."
-4. **Closing** - Professional, reassuring tone
+
+**Formatting:**
+- Use HTML formatting for clarity (<p>, <strong>, <ol>, <li>, etc.)
+- Structure the 5 steps as an ordered list with <ol> and <li> tags
 
 **Tone:**
 - Professional but friendly
@@ -462,7 +506,11 @@ Your role: Create a warm, personalized welcome email that acknowledges the custo
 - Write in Dutch (unless customer wrote in English)
 - Keep it concise (3-4 paragraphs max)
 - Make them feel they made the right choice
-- Sign off: "Met vriendelijke groet,\n\nBox 3 Team"
+
+IMPORTANT - NO SIGNATURES:
+- DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
+- DO NOT include sender name or company name at the end
+- The system will add these automatically - your output should END with the last sentence of content
 
 Respond with ONLY the email body (no subject line).`
           },
