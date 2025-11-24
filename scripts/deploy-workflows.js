@@ -79,15 +79,22 @@ async function registerWebhook(webhookConfig, mailboxId) {
   try {
     console.log(`🔗 Registering webhook for events: ${webhookConfig.events.join(', ')}`);
     console.log(`   URL: ${webhookConfig.url}`);
+    console.log(`   Mailbox ID: ${mailboxId}`);
+
+    const requestBody = {
+      url: webhookConfig.url,
+      events: webhookConfig.events,
+      mailboxes: [mailboxId],
+      description: webhookConfig.description || ''
+    };
+
+    console.log(`📤 Request body:`, JSON.stringify(requestBody, null, 2));
+    console.log(`🔑 API Token: ${FREESCOUT_API_TOKEN ? `${FREESCOUT_API_TOKEN.substring(0, 8)}...` : 'NOT SET'}`);
+    console.log(`🌐 Endpoint: ${FREESCOUT_BASE_URL}/api/webhooks`);
 
     const response = await client.post(
       `${FREESCOUT_BASE_URL}/api/webhooks`,
-      {
-        url: webhookConfig.url,
-        events: webhookConfig.events,
-        mailboxes: [mailboxId],
-        description: webhookConfig.description || ''
-      },
+      requestBody,
       {
         headers: {
           'X-Automail-API-Key': FREESCOUT_API_TOKEN,
@@ -96,6 +103,8 @@ async function registerWebhook(webhookConfig, mailboxId) {
       }
     );
 
+    console.log(`📥 Response status: ${response.status}`);
+    console.log(`📥 Response data:`, JSON.stringify(response.data, null, 2));
     console.log(`✅ Webhook registered with ID: ${response.data.id || 'success'}`);
     return response.data;
   } catch (error) {
@@ -107,10 +116,27 @@ async function registerWebhook(webhookConfig, mailboxId) {
 
     console.error(`❌ Failed to register webhook`);
     console.error(`   Events: ${webhookConfig.events.join(', ')}`);
-    console.error(`   Error: ${error.response?.data?.message || error.message}`);
+    console.error(`   HTTP Status: ${error.response?.status || 'N/A'}`);
+    console.error(`   HTTP Status Text: ${error.response?.statusText || 'N/A'}`);
+    console.error(`   Error Message: ${error.response?.data?.message || error.message}`);
+
     if (error.response?.data) {
-      console.error(`   Details:`, JSON.stringify(error.response.data, null, 2));
+      console.error(`   Full Response Data:`, JSON.stringify(error.response.data, null, 2));
     }
+
+    if (error.response?.headers) {
+      console.error(`   Response Headers:`, JSON.stringify(error.response.headers, null, 2));
+    }
+
+    // Log the full error stack for debugging
+    console.error(`\n🔍 Full Error Details:`);
+    console.error(`   Error Code: ${error.code || 'N/A'}`);
+    console.error(`   Error Name: ${error.name || 'N/A'}`);
+    if (error.config) {
+      console.error(`   Request URL: ${error.config.url}`);
+      console.error(`   Request Method: ${error.config.method}`);
+    }
+
     throw error;
   }
 }
@@ -186,9 +212,68 @@ async function deployWorkflows() {
       process.exit(1);
     }
 
-    // Step 1: Extract and register webhooks from workflows
+    // Step 1: Deploy workflows first
     console.log('╔════════════════════════════════════════════════════════╗');
-    console.log('║   Step 1: Extract & Register Webhooks                 ║');
+    console.log('║   Step 1: Deploy Workflows                             ║');
+    console.log('╚════════════════════════════════════════════════════════╝\n');
+
+    const results = {
+      success: [],
+      failed: []
+    };
+
+    // Deploy workflows one by one
+    for (let i = 0; i < workflows.length; i++) {
+      const workflow = workflows[i];
+      console.log(`\n[${i + 1}/${workflows.length}] Deploying workflow...`);
+
+      try {
+        const result = await createWorkflow(workflow, mailboxId);
+        results.success.push({
+          name: workflow.name,
+          id: result.id
+        });
+
+        // Small delay between requests to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        results.failed.push({
+          name: workflow.name,
+          error: error.message
+        });
+
+        // Ask if we should continue
+        console.log('\n⚠️  Workflow creation failed. Continue with remaining workflows? (Ctrl+C to abort)');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+    }
+
+    // Print workflow deployment summary
+    console.log('\n╔════════════════════════════════════════════════════════╗');
+    console.log('║   Workflow Deployment Summary                          ║');
+    console.log('╚════════════════════════════════════════════════════════╝\n');
+
+    console.log(`✅ Successfully deployed: ${results.success.length}/${workflows.length} workflows`);
+
+    if (results.success.length > 0) {
+      console.log('\n📋 Created workflows:');
+      results.success.forEach((w, i) => {
+        console.log(`   ${i + 1}. [ID: ${w.id}] ${w.name}`);
+      });
+    }
+
+    if (results.failed.length > 0) {
+      console.log(`\n❌ Failed: ${results.failed.length} workflows`);
+      console.log('\n📋 Failed workflows:');
+      results.failed.forEach((w, i) => {
+        console.log(`   ${i + 1}. ${w.name}`);
+        console.log(`      Error: ${w.error}`);
+      });
+    }
+
+    // Step 2: Extract and register webhooks after workflows are created
+    console.log('\n╔════════════════════════════════════════════════════════╗');
+    console.log('║   Step 2: Extract & Register Webhooks                 ║');
     console.log('╚════════════════════════════════════════════════════════╝\n');
 
     // Dynamically extract webhook events from workflows
@@ -241,8 +326,7 @@ async function deployWorkflows() {
           error: error.message
         });
 
-        console.log('\n⚠️  Webhook registration failed. This may cause workflow webhooks to not work.');
-        console.log('   Continuing with workflow deployment...');
+        console.log('\n⚠️  Webhook registration failed. Workflows are deployed but webhooks may not trigger.');
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
@@ -281,69 +365,18 @@ async function deployWorkflows() {
       });
     }
 
-    // Step 2: Deploy workflows
+    // Final summary
     console.log('\n╔════════════════════════════════════════════════════════╗');
-    console.log('║   Step 2: Deploy Workflows                             ║');
+    console.log('║   Deployment Complete                                  ║');
     console.log('╚════════════════════════════════════════════════════════╝\n');
 
-    const results = {
-      success: [],
-      failed: []
-    };
-
-    // Deploy workflows one by one
-    for (let i = 0; i < workflows.length; i++) {
-      const workflow = workflows[i];
-      console.log(`\n[${i + 1}/${workflows.length}] Deploying workflow...`);
-
-      try {
-        const result = await createWorkflow(workflow, mailboxId);
-        results.success.push({
-          name: workflow.name,
-          id: result.id
-        });
-
-        // Small delay between requests to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (error) {
-        results.failed.push({
-          name: workflow.name,
-          error: error.message
-        });
-
-        // Ask if we should continue
-        console.log('\n⚠️  Workflow creation failed. Continue with remaining workflows? (Ctrl+C to abort)');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-    }
-
-    // Print summary
-    console.log('\n╔════════════════════════════════════════════════════════╗');
-    console.log('║   Deployment Summary                                   ║');
-    console.log('╚════════════════════════════════════════════════════════╝\n');
-
-    console.log(`✅ Successfully deployed: ${results.success.length}/${workflows.length} workflows`);
-
-    if (results.success.length > 0) {
-      console.log('\n📋 Created workflows:');
-      results.success.forEach((w, i) => {
-        console.log(`   ${i + 1}. [ID: ${w.id}] ${w.name}`);
-      });
-    }
-
-    if (results.failed.length > 0) {
-      console.log(`\n❌ Failed: ${results.failed.length} workflows`);
-      console.log('\n📋 Failed workflows:');
-      results.failed.forEach((w, i) => {
-        console.log(`   ${i + 1}. ${w.name}`);
-        console.log(`      Error: ${w.error}`);
-      });
-    }
+    console.log(`✅ Workflows: ${results.success.length}/${workflows.length}`);
+    console.log(`✅ Webhooks: ${webhookResults.success.length + webhookResults.alreadyExists.length}/${webhookEvents.length}`);
 
     console.log('\n✨ Deployment complete!\n');
 
-    if (results.failed.length > 0) {
-      console.log('⚠️  Some workflows failed. Check the errors above and try deploying them manually.\n');
+    if (results.failed.length > 0 || webhookResults.failed.length > 0) {
+      console.log('⚠️  Some items failed. Check the errors above and try deploying them manually.\n');
       process.exit(1);
     }
 

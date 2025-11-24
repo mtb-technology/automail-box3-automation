@@ -597,13 +597,16 @@ app.post('/webhook/event', async (req, res) => {
   try {
     console.log('\n🔔 FreeScout webhook event received');
     console.log('📦 Payload:', JSON.stringify(req.body, null, 2));
+    console.log('📋 Headers:', JSON.stringify(req.headers, null, 2));
 
-    const { event, conversation, mailbox } = req.body;
+    // FreeScout sends event name in header, not body
+    const event = req.headers['x-freescout-event'] || req.body.event;
+    const { conversation, mailbox } = req.body;
 
     if (!event) {
       return res.status(400).json({
         status: 'error',
-        message: 'event name is required'
+        message: 'event name is required (in x-freescout-event header or body)'
       });
     }
 

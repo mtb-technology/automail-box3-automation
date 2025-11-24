@@ -46,8 +46,15 @@ async function getAllWorkflows(mailboxId) {
     const responseData = response.data;
 
     // Check if it's the nested format: { status, data: { automatic, manual } }
-    if (responseData.data && responseData.data.automatic) {
-      return responseData.data.automatic;
+    if (responseData.data) {
+      const allWorkflows = [];
+      if (responseData.data.automatic) {
+        allWorkflows.push(...responseData.data.automatic);
+      }
+      if (responseData.data.manual) {
+        allWorkflows.push(...responseData.data.manual);
+      }
+      return allWorkflows;
     }
     // Check if it's array format
     else if (Array.isArray(responseData)) {
