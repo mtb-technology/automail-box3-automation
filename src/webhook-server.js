@@ -601,7 +601,10 @@ app.post('/webhook/event', async (req, res) => {
 
     // FreeScout sends event name in header, not body
     const event = req.headers['x-freescout-event'] || req.body.event;
-    const { conversation, mailbox } = req.body;
+
+    // FreeScout sends the entire conversation object at root level
+    const conversationId = req.body.id;
+    const mailboxId = req.body.mailbox?.id;
 
     if (!event) {
       return res.status(400).json({
@@ -610,10 +613,9 @@ app.post('/webhook/event', async (req, res) => {
       });
     }
 
-    const conversationId = conversation?.id || req.body.conversation_id;
-
     console.log(`🎯 Event: ${event}`);
     console.log(`📧 Conversation ID: ${conversationId}`);
+    console.log(`📫 Mailbox ID: ${mailboxId || 'not provided'}`);
 
     // Route to appropriate handler based on event name
     switch (event) {
@@ -622,11 +624,11 @@ app.post('/webhook/event', async (req, res) => {
         break;
 
       case 'workflow.convo.box3.intent.detect':
-        await handleIntentDetect(conversationId, mailbox?.id, res);
+        await handleIntentDetect(conversationId, mailboxId, res);
         break;
 
       case 'workflow.convo.box3.draft.generate':
-        await handleDraftGenerate(conversationId, conversation?.user_id, res);
+        await handleDraftGenerate(conversationId, req.body.user_id, res);
         break;
 
       default:
