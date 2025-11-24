@@ -1,0 +1,88 @@
+graph TB
+    Start([New Box3 Email]) --> WF1{Workflow 1:<br/>Subject matches<br/>box3/vermogen?}
+    WF1 -->|Yes| Welcome[AI Generate<br/>Welcome Email]
+    Welcome --> Email1[Email 1: Welcome<br/>& Process Explanation]
+    Email1 --> WF2{Workflow 2:<br/>Wait 2 minutes}
+    WF2 --> Email2[Email 2: Upload<br/>Request]
+    Email2 --> AddTag1[Add Tag:<br/>DOCS_REQUESTED]
+
+    AddTag1 --> WF3{Workflow 3:<br/>Customer Reply<br/>with Attachment?}
+    WF3 -->|Yes| AddTag2[Add Tag:<br/>DOCS_RECEIVED]
+
+    AddTag1 --> WF6{Workflow 6:<br/>Wait 2 days<br/>No Docs?}
+    WF6 -->|Yes| Reminder1[Reminder 1:<br/>Upload Reminder]
+
+    Reminder1 --> WF7{Workflow 7:<br/>Wait 7 days<br/>No Docs?}
+    WF7 -->|Yes| Reminder2[Reminder 2:<br/>Final Upload<br/>Reminder]
+
+    AddTag2 --> WF5[Workflow 5:<br/>Route to Intake]
+    WF5 --> AddTag3[Add Tag:<br/>DOCS_UNDER_REVIEW]
+    WF5 --> AssignIntake[Assign to<br/>Intake Agent 22]
+
+    AssignIntake --> ManualTag1{Manual Tag:<br/>QUESTIONS_PREPARED}
+    ManualTag1 --> WF8[Workflow 8:<br/>Send Questions]
+    WF8 --> Email3[Email 3:<br/>Dynamic Questions]
+    WF8 --> AddTag4[Add Tag:<br/>QUESTIONS_SENT]
+
+    AddTag4 --> ManualTag2{Manual Tag:<br/>QUESTIONS_ANSWERED}
+    ManualTag2 --> WF9[Workflow 9:<br/>Route to Fiscalist]
+    WF9 --> AssignQuote[Assign to<br/>Quote Agent 23]
+
+    AssignQuote --> ManualTag3{Manual Tag:<br/>OFFER_READY}
+    ManualTag3 --> WF10[Workflow 10:<br/>Send Offer]
+    WF10 --> Email4[Email 4:<br/>Offer & Payment]
+    WF10 --> AddTag5[Add Tag:<br/>OFFER_SENT]
+    WF10 --> AssignPayment[Assign to<br/>Payment Agent 26]
+
+    AddTag5 --> WF11{Workflow 11:<br/>Wait 3 days<br/>No Response?}
+    WF11 -->|Yes| Reminder3[Reminder 1:<br/>Offer Reminder]
+
+    Reminder3 --> WF12{Workflow 12:<br/>Wait 10 days<br/>No Response?}
+    WF12 -->|Yes| Reminder4[Reminder 2:<br/>Final Offer<br/>Reminder]
+
+    AddTag5 --> IntentTag1{Intent Tag:<br/>Proposal_Accepted}
+    IntentTag1 --> WF14[Workflow 14:<br/>Payment Flow]
+    WF14 --> Email6[Email: Payment<br/>& Sign Link]
+    WF14 --> AddTag6[Add Tag:<br/>PAYMENT_STARTED]
+
+    AddTag6 --> WebhookPay{External Webhook:<br/>SIGNED_AND_PAID}
+    WebhookPay --> WF15[Workflow 15:<br/>Confirmation]
+    WF15 --> Email5[Email 5:<br/>Payment Confirmed]
+    WF15 --> StatusActive[Set Status:<br/>Active]
+
+    AddTag1 --> WF4{Workflow 4:<br/>Customer Reply<br/>No Attachment?}
+    WF4 -->|Yes| IntentDetect[AI Intent<br/>Detection]
+    IntentDetect --> IntentTag2{Detected Intent?}
+
+    IntentTag2 -->|CLOSED_LOST| WF13[Workflow 13:<br/>Close Lost]
+    WF13 --> Email7[Email: Thank You<br/>& Goodbye]
+    WF13 --> StatusClosed[Set Status:<br/>Closed]
+
+    IntentTag2 -->|Proposal_Accepted| WF14
+
+    AssignIntake --> WF16{Workflow 16:<br/>Agent Assigned<br/>& Reply?}
+    AssignQuote --> WF16
+    AssignPayment --> WF16
+    WF16 -->|Yes| DraftGen[AI Generate<br/>Draft Reply]
+    DraftGen --> DraftReady[Draft Created<br/>for Agent Review]
+
+    style Start fill:#e1f5ff
+    style Email1 fill:#d4edda
+    style Email2 fill:#d4edda
+    style Email3 fill:#d4edda
+    style Email4 fill:#d4edda
+    style Email5 fill:#d4edda
+    style Email6 fill:#d4edda
+    style Email7 fill:#f8d7da
+    style Reminder1 fill:#fff3cd
+    style Reminder2 fill:#fff3cd
+    style Reminder3 fill:#fff3cd
+    style Reminder4 fill:#fff3cd
+    style Welcome fill:#cfe2ff
+    style IntentDetect fill:#cfe2ff
+    style DraftGen fill:#cfe2ff
+    style AssignIntake fill:#e7d4ff
+    style AssignQuote fill:#e7d4ff
+    style AssignPayment fill:#e7d4ff
+    style StatusClosed fill:#f8d7da
+    style StatusActive fill:#d4edda

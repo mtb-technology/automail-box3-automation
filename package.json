@@ -1,0 +1,41 @@
+{
+  "name": "freescout-box3-workflows",
+  "version": "2.0.0",
+  "description": "AI-powered workflow automation for FreeScout Box 3 tax advisory services",
+  "type": "module",
+  "main": "src/webhook-server.js",
+  "scripts": {
+    "start": "node src/webhook-server.js",
+    "deploy": "cd scripts && node deploy-workflows.js",
+    "delete": "cd scripts && node delete-all-workflows.js",
+    "test:webhook": "curl -X POST http://localhost:3000/test/detect-intent -H 'Content-Type: application/json' -d '{\"text\":\"Ik wil graag doorgaan met jullie dienst\",\"subject\":\"Box 3 bezwaar\"}'",
+    "test:event": "curl -X POST http://localhost:3000/webhook/event -H 'Content-Type: application/json' -d '{\"event\":\"workflow.convo.box3.welcome.generate\",\"conversation\":{\"id\":123}}'",
+    "health": "curl http://localhost:3000/health",
+    "pm2:start": "pm2 start src/webhook-server.js --name box3-webhooks",
+    "pm2:stop": "pm2 stop box3-webhooks",
+    "pm2:restart": "pm2 restart box3-webhooks",
+    "pm2:logs": "pm2 logs box3-webhooks",
+    "pm2:status": "pm2 status box3-webhooks"
+  },
+  "keywords": [
+    "freescout",
+    "workflows",
+    "box3",
+    "automation",
+    "openai",
+    "intent-detection",
+    "ai",
+    "webhooks",
+    "tax-advisory"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

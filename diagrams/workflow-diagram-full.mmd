@@ -1,0 +1,98 @@
+%%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#4A90E2','primaryTextColor':'#fff','primaryBorderColor':'#2E5C8A','lineColor':'#2E5C8A','secondaryColor':'#50C878','tertiaryColor':'#FFB84D'}}}%%
+
+flowchart TD
+    Start([Customer Sends Email<br/>Subject: Box 3]) --> WelcomeWebhook[🔗 Workflow 1:<br/>Webhook: Generate Welcome]
+
+    WelcomeWebhook --> AIWelcome[🤖 AI Agent:<br/>Personalized Welcome Email]
+    AIWelcome --> Email1[📧 Email 1: Welkom<br/>Personalized Process Uitleg]
+    Email1 --> Wait2min[⏱️ Wait 2 minutes]
+    Wait2min --> Email2[📧 Workflow 2:<br/>Upload Request]
+    Email2 --> DocsReq[🏷️ Add Tag:<br/>DOCS_REQUESTED]
+
+    DocsReq --> WaitDocs{Customer<br/>Uploads Docs?}
+
+    WaitDocs -->|No - After 2 days| Reminder1[📧 Workflow 6:<br/>Reminder 1: Upload]
+    Reminder1 --> WaitDocs
+
+    WaitDocs -->|No - After 7 days| Reminder2[📧 Workflow 7:<br/>Reminder 2: Final]
+    Reminder2 --> WaitDocs
+
+    WaitDocs -->|Yes - Customer replies with attachment| AttachCheck[✓ Workflow 3:<br/>Attachment Detection<br/>NO AI NEEDED]
+    AttachCheck --> DocsReceived[🏷️ Add Tag:<br/>DOCS_RECEIVED]
+
+    DocsReceived --> Route1[📧 Workflow 5:<br/>Route to Intake]
+    Route1 --> AssignIntake[Assign: Intake Agent<br/>ID: 22]
+    Route1 --> AddTagReview[🏷️ Add Tag:<br/>DOCS_UNDER_REVIEW]
+
+    AssignIntake --> IntakeAnalyze[👤 Intake Agent:<br/>Analyze Tax Return]
+    IntakeAnalyze --> DetermineQ{Which Questions<br/>Needed?}
+    DetermineQ --> QBlocks[Question Categories:<br/>WONING, BELEGGINGEN,<br/>SPAARGELD, SCHULDEN]
+
+    QBlocks --> ManualTrigger1[👆 MANUAL:<br/>Agent adds tag<br/>QUESTIONS_PREPARED]
+    ManualTrigger1 --> Email3[📧 Workflow 8:<br/>Email 3: Dynamic Questions]
+    Email3 --> QSent[🏷️ Add Tag:<br/>QUESTIONS_SENT]
+
+    QSent --> WaitAnswers[⏱️ Wait for<br/>Customer Answers]
+    WaitAnswers --> CustomerAnswers[Customer Replies<br/>with Answers]
+    CustomerAnswers --> IntentDetect2[🤖 Workflow 4:<br/>Intent Detection]
+    IntentDetect2 --> ManualTag2[👆 MANUAL:<br/>Agent adds tag<br/>QUESTIONS_ANSWERED]
+
+    ManualTag2 --> Route2[📧 Workflow 9:<br/>Route to Fiscalist]
+    Route2 --> AssignFiscalist[Assign: Quote Agent<br/>Fiscalist ID: 23]
+
+    AssignFiscalist --> FiscalCalc[👤 Fiscalist:<br/>Calculate Offer]
+    FiscalCalc --> CalcDetails[Determine:<br/>• Expected refund range<br/>• Fee amount<br/>• Success probability]
+
+    CalcDetails --> ManualTrigger2[👆 MANUAL:<br/>Fiscalist adds tag<br/>OFFER_READY]
+    ManualTrigger2 --> Email4[📧 Workflow 10:<br/>Email 4: Final Offer]
+    Email4 --> OfferSent[🏷️ Add Tag:<br/>OFFER_SENT]
+    Email4 --> AssignPayment[Assign: Payment Agent<br/>ID: 26]
+
+    AssignPayment --> WaitAccept{Customer<br/>Accepts?}
+
+    WaitAccept -->|No - After 3 days| OfferRem1[📧 Workflow 11:<br/>Reminder 1: Offer]
+    OfferRem1 --> WaitAccept
+
+    WaitAccept -->|No - After 10 days| OfferRem2[📧 Workflow 12:<br/>Reminder 2: Final + Decline Option]
+    OfferRem2 --> WaitAccept
+
+    WaitAccept -->|Customer: ik wil niet verder| IntentDetect3[🤖 Workflow 4:<br/>Intent Detection]
+    IntentDetect3 --> ClosedLost[🏷️ Add Tag:<br/>CLOSED_LOST]
+    ClosedLost --> CloseEmail[📧 Workflow 13:<br/>Closing Email]
+    CloseEmail --> End1([End:<br/>Closed Lost])
+
+    WaitAccept -->|Yes - Customer accepts| IntentDetect4[🤖 Workflow 4:<br/>Intent Detection]
+    IntentDetect4 --> ProposalAccepted[🏷️ Add Tag:<br/>Proposal_Accepted]
+    ProposalAccepted --> Email4b[📧 Workflow 14:<br/>Payment & Sign Email]
+    Email4b --> PaymentStart[🏷️ Add Tag:<br/>PAYMENT_STARTED]
+
+    PaymentStart --> WaitPayment[⏱️ Wait for<br/>External Payment System]
+    WaitPayment --> PaymentWebhook[🔗 External Webhook:<br/>Payment Completed]
+    PaymentWebhook --> SignedPaid[🏷️ Add Tag:<br/>SIGNED_AND_PAID]
+
+    SignedPaid --> Email5[📧 Workflow 15:<br/>Email 5: Confirmation]
+    Email5 --> StatusActive[Set Status: Active]
+    StatusActive --> Success([Success:<br/>Ready to Start<br/>Fiscalist Assigned])
+
+    %% AI Draft runs throughout
+    AssignIntake -.-> AIDraft[🤖 Workflow 16:<br/>AI Draft Generator]
+    AssignFiscalist -.-> AIDraft
+    AssignPayment -.-> AIDraft
+    AIDraft -.-> AgentReview[Agent Reviews Draft<br/>Before Sending]
+
+    %% Styling
+    classDef webhookStyle fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    classDef workflowStyle fill:#50C878,stroke:#2E8B57,stroke-width:2px,color:#fff
+    classDef aiStyle fill:#9B59B6,stroke:#7D3C98,stroke-width:3px,color:#fff
+    classDef stateStyle fill:#FFB84D,stroke:#E67E22,stroke-width:2px,color:#000
+    classDef manualStyle fill:#E74C3C,stroke:#C0392B,stroke-width:3px,color:#fff
+    classDef agentStyle fill:#3498DB,stroke:#2874A6,stroke-width:2px,color:#fff
+    classDef endStyle fill:#95A5A6,stroke:#7F8C8D,stroke-width:2px,color:#fff
+
+    class Email1,Email2,Email3,Email4,Email4b,Email5,Route1,Route2,Reminder1,Reminder2,OfferRem1,OfferRem2,CloseEmail workflowStyle
+    class IntentDetect2,IntentDetect3,IntentDetect4,AIWelcome,AIDraft aiStyle
+    class DocsReq,DocsReceived,AddTagReview,QSent,OfferSent,ClosedLost,ProposalAccepted,PaymentStart,SignedPaid stateStyle
+    class ManualTrigger1,ManualTrigger2,ManualTag2 manualStyle
+    class AssignIntake,AssignFiscalist,AssignPayment,IntakeAnalyze,FiscalCalc agentStyle
+    class WelcomeWebhook,PaymentWebhook webhookStyle
+    class End1,Success,StatusActive endStyle
