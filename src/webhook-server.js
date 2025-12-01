@@ -27,7 +27,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increase payload size limit for large conversations
 
 const CONFIG = {
   port: process.env.WEBHOOK_PORT || 3000,
@@ -41,19 +41,52 @@ const CONFIG = {
 /**
  * Custom Field Mapping for Mailbox 3 (Box 3 service)
  * Maps FreeScout custom field IDs to their names for easy access
+ *
+ * Retrieved from FreeScout API on 2025-11-26:
+ * ID 9  → Form ID
+ * ID 10 → Active Step
+ * ID 11 → WOZ Value
+ * ID 12 → Mortgage Value
+ * ID 13 → Savings Value
+ * ID 14 → Investment Value
+ * ID 15 → Assets Value
+ * ID 16 → Debts Value
+ * ID 17 → Estimate 1
+ * ID 18 → Estimate 2
+ * ID 19 → Final Estimate
+ * ID 22 → Years Selected (multi-select)
+ * ID 23 → Has Objected (boolean)
+ * ID 24 → Final Imposed Objected (boolean)
+ * ID 25 → Has Second Property (boolean)
+ * ID 26 → Second Property Abroad (boolean)
+ * ID 27 → Restore Link
  */
 const CUSTOM_FIELD_MAP = {
+  // Internal tracking
   FORM_ID: 9,
   ACTIVE_STEP: 10,
+
+  // Financial data
   WOZ_VALUE: 11,
   MORTGAGE_VALUE: 12,
   SAVINGS_VALUE: 13,
   INVESTMENT_VALUE: 14,
   ASSETS_VALUE: 15,
   DEBTS_VALUE: 16,
+
+  // Estimates
   ESTIMATE_1: 17,
   ESTIMATE_2: 18,
   FINAL_ESTIMATE: 19,
+
+  // Additional form fields
+  YEARS_SELECTED: 22,              // Multi-select: years
+  HAS_OBJECTED: 23,                // Boolean: has customer objected before
+  FINAL_IMPOSED_OBJECTED: 24,      // Boolean: final assessment imposed and objected
+  HAS_SECOND_PROPERTY: 25,         // Boolean: has second property
+  SECOND_PROPERTY_ABROAD: 26,      // Boolean: second property is abroad
+  RESTORE_LINK: 27,                // Link to restore/resume form
+
   // Future field - add this to FreeScout if you want service-specific prompts
   SERVICE_NAME: null // TODO: Create this custom field in FreeScout (e.g., "Box 3 Bezwaar", "Tax Analysis", "Business Tax")
 };
@@ -123,7 +156,8 @@ function formatCustomFieldsForPrompt(conversation) {
   // Fields to exclude from AI prompts (internal tracking only)
   const excludedFieldIds = [
     CUSTOM_FIELD_MAP.FORM_ID,      // Form ID - internal tracking
-    CUSTOM_FIELD_MAP.ACTIVE_STEP   // Active Step - internal workflow state
+    CUSTOM_FIELD_MAP.ACTIVE_STEP,  // Active Step - internal workflow state
+    CUSTOM_FIELD_MAP.RESTORE_LINK
   ];
 
   const nonEmptyFields = conversation.customFields
@@ -680,33 +714,52 @@ async function generateWelcomeEmail(customerMessage, subject, customerName, lang
             role: 'system',
             content: `You are the Welcome Agent for Jan de Belastingman - Box 3 bezwaar service.
 
-Your role: Create a warm, personalized welcome email that acknowledges the customer's specific situation and explains the process.
+Your role: Create a warm, personalized welcome email following a specific structure that acknowledges the customer's situation and explains the process.
 
-**Email Structure:**
-1. **Personal greeting** - Address them by name. If they sent a message, acknowledge their specific situation. If no message yet (lead import), welcome them warmly and acknowledge their interest based on available data (subject, custom fields).
-2. **Process overview** - Explain the 5-step Box 3 bezwaar process:
-   - Stap 1: U stuurt uw meest recente aangifte inkomstenbelasting
-   - Stap 2: Wij analyseren uw situatie en stellen eventueel aanvullende vragen
-   - Stap 3: U ontvangt een persoonlijk voorstel met verwacht resultaat
-   - Stap 4: Na akkoord verwerken wij de ondertekening en betaling
-   - Stap 5: Wij starten met uw bezwaarschrift bij de Belastingdienst
-3. **Next step** - "U ontvangt binnen enkele minuten een e-mail met het verzoek om uw aangifte te uploaden."
+**Email Structure - FOLLOW THIS TEMPLATE:**
+
+1. **Personal Greeting** (1-2 sentences)
+   - Address customer by full name (use formal format if available: "Beste [Initials]. [Last Name]")
+   - Thank them for their registration
+   - Reference their specific situation based on available data (wealth mix with savings and investments, WOZ value, investment portfolio, etc.)
+   - Show understanding that they want to know if they qualify for tax refund based on actual returns
+
+2. **Why This Approach?** (1 paragraph)
+   - Explain the legal complexity of Box 3 (difference between forfaitaire rendement and werkelijk rendement)
+   - Emphasize structured process provides certainty upfront
+   - Prevent starting expensive legal process if it yields nothing
+   - "Eerst rekenen, dan pas beslissen" (Calculate first, then decide)
+
+3. **The 5 Steps** (ordered list)
+   Present exactly these 5 steps as <ol>:
+   - **Aanleveren gegevens**: Customer receives email with list of required documents
+   - **Analyse**: Calculate hard numerical difference between tax assessment and actual returns
+   - **Voorstel**: Customer receives personal advisory report with expected result (potential refund)
+   - **Akkoord**: If favorable, finalize agreements after customer approval
+   - **Indiening**: Submit motivated objection to Belastingdienst
+
+4. **Call to Action** (1 sentence)
+   - "Houd uw inbox in de gaten: de e-mail met het concrete informatieverzoek volgt over enkele minuten."
+
+**Personalization Guidelines:**
+- Reference specific financial data if available (WOZ value, savings amounts, investment values, estimates)
+- Mention "vermogensmix (spaargeld en beleggingen)" if both SAVINGS_VALUE and INVESTMENT_VALUE are present
+- If years_selected is provided, mention the specific years
+- If has_objected is true, acknowledge they've been through this before
+- If has_second_property is true, acknowledge multiple properties
+- Keep personalization natural and conversational
 
 **Formatting:**
-- Use HTML formatting for clarity (<p>, <strong>, <ol>, <li>, etc.)
+- Use HTML: <p>, <strong>, <ol>, <li>
+- Use <strong> for emphasis on key phrases
 - Structure the 5 steps as an ordered list with <ol> and <li> tags
 
 **Tone:**
-- Professional but friendly
-- Reassuring and confident
-- Show you understand their concern about Box 3
-- Personalize based on available information (their message, custom fields, or subject)
-- If customer data (WOZ, estimates, etc.) is provided, you can reference it naturally
-
-**Important:**
-- Keep it concise (3-4 paragraphs max)
-- Make them feel they made the right choice
-- If no customer message exists yet, focus on welcoming them and explaining the process clearly
+- Professional but warm
+- Confident and reassuring
+- Show expertise in Box 3 matters
+- Empathetic to their situation
+- No jargon unless explained
 
 IMPORTANT - NO SIGNATURES:
 - DO NOT include any closing signatures (NO "Met vriendelijke groet", "Kind regards", "Best regards", etc.)
@@ -784,6 +837,44 @@ async function sendEmailToCustomer(conversationId, subject, body, scheduledAt = 
     return response.data;
   } catch (error) {
     console.error('❌ Failed to send email:', error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+ * Send delayed email to customer using FreeScout's delay feature
+ */
+async function sendDelayedEmailToCustomer(conversationId, subject, body, delayValue, delayUnit) {
+  try {
+    const requestBody = {
+      type: 'email_customer',
+      value: {
+        body: body,
+        cc: '',
+        bcc: '',
+        subject: subject,
+        conv_history: 'none',
+        delay_value: delayValue,
+        delay_unit: delayUnit
+      }
+    };
+
+    const response = await axios.post(
+      `${CONFIG.freescoutUrl}/api/conversations/${conversationId}/threads`,
+      requestBody,
+      {
+        headers: {
+          'X-Automail-API-Key': CONFIG.freescoutApiKey,
+          'Content-Type': 'application/json'
+        },
+        httpsAgent: new (await import('https')).Agent({ rejectUnauthorized: false })
+      }
+    );
+
+    console.log(`✅ Email scheduled with delay: ${delayValue} ${delayUnit} in conversation ${conversationId}`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Failed to send delayed email:', error.response?.data || error.message);
     throw error;
   }
 }
@@ -950,52 +1041,103 @@ async function handleWelcomeGenerate(conversation, res) {
       welcomeEmailBody
     );
 
-    // Calculate scheduled time: now + 30 minutes
-    const scheduledTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
-    const scheduledTimeISO = scheduledTime.toISOString();
+    // Create Email 2: Upload Request (with 5 minute delay)
+    const uploadRequestSubject = language === 'en'
+      ? 'Action required: Submit actual return data'
+      : 'Actie vereist: Aanleveren gegevens werkelijk rendement';
 
-    // Create Email 2: Upload Request (scheduled for 30 minutes from now)
     const uploadRequestBody = language === 'en'
       ? `<p>Dear {%customer.fullName%},</p>
 
-<p>To properly assess your Box 3 objection, we need your most recent income tax return.</p>
+<p>To make your objection based on actual returns viable, we need more than just your tax return. The Dutch Tax Authority calculates with fictitious percentages, but we want to calculate with what actually happened.</p>
 
-<p><strong>What we need:</strong></p>
-<ul>
-<li>Your income tax return (latest year)</li>
-<li>Any attachments or explanations</li>
-</ul>
+<p>Please reply to this email with the documents listed below. In your response, please clearly indicate which tax year this concerns.</p>
 
-<p><strong>How to upload:</strong><br>
-Reply to this email and attach the documents.</p>
+<h3>1. Income Tax Return</h3>
+<p>The PDF of the submitted tax return for the relevant year.</p>
+<p><strong>Why:</strong> This is our starting point to see how the Tax Authority has calculated your wealth.</p>
+<p><strong>Where to find:</strong> You can download this by logging into My Tax Authority (under the 'Income Tax' tab).</p>
 
-<p><strong>File formats:</strong><br>
-PDF, JPG, PNG, or DOC/DOCX</p>
+<h3>2. Bank Accounts (Interest & Currency)</h3>
+<p>An overview of actually received interest and any currency results.</p>
+<p><strong>Why:</strong> We must prove that your actual savings interest is lower than the notional return used by the tax authority.</p>
+<p><strong>Where to find:</strong> This is in the annual financial overview you can download from your banking app or internet banking.</p>
 
-<p>We will process your return within 1-2 business days.</p>`
+<h3>3. Investments</h3>
+<p>An overview with opening balance (Jan 1), closing balance (Dec 31), any deposits/withdrawals, and received dividends.</p>
+<p><strong>Why:</strong> Returns consist not only of dividends, but also of price gains or losses. By comparing opening and closing balances (adjusted for deposits), we calculate your exact wealth growth.</p>
+<p><strong>Where to find:</strong> Consult the tax annual overview of your investment account or broker.</p>
+
+<h3>4. Real Estate & Other Assets</h3>
+<p>The WOZ value on January 1 of the relevant year AND that of the following year (T+1). If rented: an overview of rental income.</p>
+<p><strong>Why:</strong> For real estate, total return counts: that's the value increase (indirect return) plus rental income (direct return).</p>
+<p><strong>Where to find:</strong> On the WOZ assessment from the municipality or via wozwaardeloket.nl.</p>
+
+<h3>5. Debts</h3>
+<p>An overview of debts and interest paid.</p>
+<p><strong>Why:</strong> The interest you pay on debts (in box 3) reduces your actual return. We include this in the calculation in favor of your result.</p>
+<p><strong>Where to find:</strong> In the annual statement from your mortgage provider or lender.</p>
+
+<p><strong>How to submit your documents securely:</strong></p>
+
+<p><strong>Option 1 — Via email</strong><br>
+Reply to this email and attach your documents.<br>
+Allowed file formats: PDF, JPG, PNG, DOC, DOCX.</p>
+
+<p><strong>Option 2 — Via our secure upload environment (recommended)</strong><br>
+Upload your documents securely via our secure environment:<br>
+👉 <a href="https://automail.jandebelastingman.nl/help/2796044459/tickets">Klik hier om documenten veilig te uploaden</a></p>
+
+<p>Once we have these documents complete, we will start the analysis within 1-2 business days.</p>`
       : `<p>Beste {%customer.fullName%},</p>
 
-<p>Om uw Box 3 bezwaar correct te kunnen beoordelen, hebben wij uw meest recente aangifte inkomstenbelasting nodig.</p>
+<p>Om uw bezwaar op basis van werkelijk rendement kansrijk te maken, hebben wij meer nodig dan alleen uw belastingaangifte. De Belastingdienst rekent met fictieve percentages, maar wij willen rekenen met wat er écht is gebeurd.</p>
 
-<p><strong>Wat wij nodig hebben:</strong></p>
-<ul>
-<li>Uw aangifte inkomstenbelasting (laatste jaar)</li>
-<li>Eventuele bijlagen of toelichting</li>
-</ul>
+<p>Wilt u deze e-mail beantwoorden met de onderstaande documenten? Vermeld in uw reactie s.v.p. ook duidelijk om welk belastingjaar het gaat.</p>
 
-<p><strong>Hoe te uploaden:</strong><br>
-Beantwoord deze e-mail en voeg de documenten als bijlage toe.</p>
+<h3>1. De aangifte inkomstenbelasting</h3>
+<p>De PDF van de ingediende aangifte van het betreffende jaar.</p>
+<p><strong>Waarom:</strong> Dit is ons startpunt om te zien hoe de Belastingdienst uw vermogen nu heeft berekend.</p>
+<p><strong>Waar te vinden:</strong> U kunt deze downloaden door in te loggen op Mijn Belastingdienst (onder het tabblad 'Inkomstenbelasting').</p>
 
-<p><strong>Bestandsformaten:</strong><br>
-PDF, JPG, PNG, of DOC/DOCX</p>
+<h3>2. Bankrekeningen (Rente & Valuta)</h3>
+<p>Een overzicht van de daadwerkelijk ontvangen rente en eventuele valutaresultaten.</p>
+<p><strong>Waarom:</strong> Wij moeten aantonen dat uw werkelijk ontvangen spaarrente lager is dan het forfaitaire rendement waar de fiscus mee rekent.</p>
+<p><strong>Waar te vinden:</strong> Dit staat in het financieel jaaroverzicht dat u kunt downloaden in uw bankieren-app of via internetbankieren.</p>
 
-<p>Wij verwerken uw aangifte binnen 1-2 werkdagen.</p>`;
+<h3>3. Beleggingen</h3>
+<p>Een overzicht met de beginstand (1 jan), eindstand (31 dec), eventuele stortingen/onttrekkingen en de ontvangen dividenden.</p>
+<p><strong>Waarom:</strong> Rendement bestaat niet alleen uit dividend, maar ook uit koerswinst of -verlies. Door de begin- en eindstand te vergelijken (gecorrigeerd voor stortingen), berekenen we uw exacte vermogensgroei.</p>
+<p><strong>Waar te vinden:</strong> Raadpleeg hiervoor het fiscale jaaroverzicht van uw beleggingsrekening of broker.</p>
 
-    await sendEmailToCustomer(
+<h3>4. Vastgoed & overige bezittingen</h3>
+<p>De WOZ-waarde op 1 januari van het betreffende jaar én die van het jaar erna (T+1). Indien verhuurd: een overzicht van de huuropbrengsten.</p>
+<p><strong>Waarom:</strong> Voor vastgoed telt het totaalrendement: dat is de waardestijging (indirect rendement) plus de huurinkomsten (direct rendement).</p>
+<p><strong>Waar te vinden:</strong> Op de WOZ-beschikking van de gemeente of via wozwaardeloket.nl.</p>
+
+<h3>5. Schulden</h3>
+<p>Een overzicht van de schulden en de betaalde rente.</p>
+<p><strong>Waarom:</strong> De rente die u betaalt over schulden (in box 3) verlaagt uw werkelijke rendement. Dit nemen we mee in de berekening ten gunste van uw resultaat.</p>
+<p><strong>Waar te vinden:</strong> In de jaaropgave van uw hypotheekverstrekker of kredietverlener.</p>
+
+<p><strong>U kunt uw documenten op twee manieren veilig aanleveren:</strong></p>
+
+<p><strong>Optie 1 — Via e-mail</strong><br>
+Beantwoord deze e-mail en voeg uw documenten toe.<br>
+Toegestane bestandsformaten: PDF, JPG, PNG, DOC, DOCX.</p>
+
+<p><strong>Optie 2 — Via onze beveiligde uploadomgeving (aanbevolen)</strong><br>
+Upload uw documenten veilig via onze beveiligde omgeving:<br>
+👉 <a href="https://automail.jandebelastingman.nl/help/2796044459/tickets">Klik hier om documenten veilig te uploaden</a></p>
+
+<p>Zodra wij deze stukken compleet hebben, starten wij binnen 1-2 werkdagen met de analyse.</p>`;
+
+    await sendDelayedEmailToCustomer(
       conversationId,
-      'Upload aangifte - Box 3 bezwaar',
+      uploadRequestSubject,
       uploadRequestBody,
-      scheduledTimeISO
+      5, // delay value
+      'minutes' // delay unit
     );
 
     // Add DOCS_REQUESTED tag
@@ -1004,19 +1146,19 @@ PDF, JPG, PNG, of DOC/DOCX</p>
     // Add line item for workflow tracking
     await addLineItem(
       conversationId,
-      `Email 1: Welcome email sent (AI-generated, ${welcomeEmailBody.length} chars) | Email 2: Upload request scheduled for ${scheduledTime.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit' })}`
+      `Email 1: Welcome email sent (AI-generated, ${welcomeEmailBody.length} chars) | Email 2: Upload request scheduled (5 minute delay)`
     );
 
     console.log(`✅ Welcome email sent for conversation ${conversationId}`);
-    console.log(`✅ Upload request email scheduled for ${scheduledTime.toLocaleString()}`);
+    console.log(`✅ Upload request email scheduled with 5 minute delay`);
     console.log(`✅ DOCS_REQUESTED tag added\n`);
 
     res.json({
       status: 'success',
       conversation_id: conversationId,
       email_length: welcomeEmailBody.length,
-      upload_request_scheduled_at: scheduledTimeISO,
-      message: 'Welcome email sent and upload request scheduled for 30 minutes from now'
+      upload_request_delay: '5 minutes',
+      message: 'Welcome email sent and upload request scheduled with 5 minute delay'
     });
 
   } catch (error) {
