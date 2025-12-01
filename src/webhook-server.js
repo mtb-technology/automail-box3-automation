@@ -842,21 +842,31 @@ async function sendEmailToCustomer(conversationId, subject, body, scheduledAt = 
 }
 
 /**
- * Send delayed email to customer using FreeScout's delay feature
+ * Calculate scheduled datetime in ISO 8601 format
+ */
+function calculateScheduledDateTime(delayValue, delayUnit) {
+  const now = new Date();
+  const delay = {
+    'minutes': delayValue * 60 * 1000,
+    'hours': delayValue * 60 * 60 * 1000,
+    'days': delayValue * 24 * 60 * 60 * 1000
+  }[delayUnit] || 0;
+
+  return new Date(now.getTime() + delay).toISOString();
+}
+
+/**
+ * Send delayed email to customer using FreeScout's scheduledAt feature
  */
 async function sendDelayedEmailToCustomer(conversationId, subject, body, delayValue, delayUnit) {
   try {
+    const scheduledAt = calculateScheduledDateTime(delayValue, delayUnit);
+
     const requestBody = {
-      type: 'email_customer',
-      value: {
-        body: body,
-        cc: '',
-        bcc: '',
-        subject: subject,
-        conv_history: 'none',
-        delay_value: delayValue,
-        delay_unit: delayUnit
-      }
+      type: 'message',    // Correct thread type for agent reply
+      text: body,         // FreeScout uses "text" not "body"
+      user: 1,            // System user (required for agent threads)
+      scheduledAt: scheduledAt  // ISO 8601 datetime
     };
 
     const response = await axios.post(
@@ -871,7 +881,7 @@ async function sendDelayedEmailToCustomer(conversationId, subject, body, delayVa
       }
     );
 
-    console.log(`✅ Email scheduled with delay: ${delayValue} ${delayUnit} in conversation ${conversationId}`);
+    console.log(`✅ Email scheduled for ${new Date(scheduledAt).toLocaleString()} (${delayValue} ${delayUnit}) in conversation ${conversationId}`);
     return response.data;
   } catch (error) {
     console.error('❌ Failed to send delayed email:', error.response?.data || error.message);
@@ -1136,7 +1146,7 @@ Upload uw documenten veilig via onze beveiligde omgeving:<br>
       conversationId,
       uploadRequestSubject,
       uploadRequestBody,
-      5, // delay value
+      30, // delay value
       'minutes' // delay unit
     );
 
